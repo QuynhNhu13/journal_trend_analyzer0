@@ -5,6 +5,14 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Firebase Gradle plugins are applied ONLY when google-services.json is present,
+// so the project still builds before Firebase has been configured.
+// After running `flutterfire configure`, google-services.json appears and these activate automatically.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+    apply(plugin = "com.google.firebase.crashlytics")
+}
+
 android {
     namespace = "com.example.journal_trend_analyzer"
     compileSdk = flutter.compileSdkVersion
@@ -24,7 +32,9 @@ android {
         applicationId = "com.example.journal_trend_analyzer"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // Firebase Auth / Google Sign-In require a minimum SDK of 23.
+        minSdk = maxOf(23, flutter.minSdkVersion)
+        multiDexEnabled = true
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

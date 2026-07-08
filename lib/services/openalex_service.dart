@@ -123,6 +123,28 @@ class OpenAlexService{
     }
   }
 
+  /// Aggregates the most frequent keywords for a topic using OpenAlex's
+  /// `group_by=keywords.id`. Returns (keyword, count) sorted descending.
+  Future<List<MapEntry<String, int>>> fetchTopKeywords(String keyword) async {
+    try {
+      final response = await dio.get(
+        'https://api.openalex.org/works?search=$keyword&group_by=keywords.id',
+      );
+      List results = response.data['group_by'];
+      final entries = <MapEntry<String, int>>[];
+      for (var e in results) {
+        final name = e['key_display_name']?.toString().trim() ?? '';
+        final count = e['count'] as int? ?? 0;
+        if (name.isEmpty || name.toLowerCase() == 'unknown') continue;
+        entries.add(MapEntry(name, count));
+      }
+      entries.sort((a, b) => b.value.compareTo(a.value));
+      return entries;
+    } catch (e) {
+      throw Exception('Top Keywords API Failed');
+    }
+  }
+
   // Dashboard-specific API methods
 
   Future<int> fetchTotalPublicationCount(String keyword) async {

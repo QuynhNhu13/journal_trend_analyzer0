@@ -1,15 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../firebase/analytics_service.dart';
 import '../l10n/locale_provider.dart';
 import '../models/publication.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 
-class DetailScreen extends StatelessWidget {
+class DetailScreen extends StatefulWidget {
   final Publication publication;
 
   const DetailScreen({super.key, required this.publication});
+
+  @override
+  State<DetailScreen> createState() => _DetailScreenState();
+}
+
+class _DetailScreenState extends State<DetailScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Analytics: view_publication (lab §5).
+    AnalyticsService.instance.logViewPublication(
+      title: widget.publication.title,
+      year: widget.publication.year,
+    );
+  }
 
   Future<void> _launchUrl(String urlString) async {
     if (urlString.isEmpty) return;
@@ -24,7 +40,7 @@ class DetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = publication;
+    final p = widget.publication;
 
     return Scaffold(
       backgroundColor: AppColors.background,

@@ -1,0 +1,392 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../firebase/crashlytics_service.dart';
+import '../firebase/messaging_service.dart';
+import '../firebase/remote_config_service.dart';
+import '../providers/dashboard_provider.dart';
+import '../theme/app_theme.dart';
+import '../viewmodels/auth_view_model.dart';
+import '../viewmodels/profile_view_model.dart';
+import '../widgets/common.dart';
+
+/// Profile screen (lab §4.8): user info, Notification Center, Report Export,
+/// Remote Config demo and Crashlytics demo.
+class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const BrandedHeader(
+          title: 'Profile',
+          subtitle: 'Tài khoản & dịch vụ Firebase',
+          icon: Icons.person_rounded,
+        ),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
+            children: [
+              _userCard(),
+              const SizedBox(height: 20),
+              _notificationCenter(),
+              const SizedBox(height: 20),
+              _reportExport(),
+              const SizedBox(height: 20),
+              _remoteConfig(),
+              const SizedBox(height: 20),
+              _crashlytics(),
+              const SizedBox(height: 24),
+              _signOutButton(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── User info ──
+  Widget _userCard() {
+    final auth = context.watch<AuthViewModel>();
+    final user = auth.user;
+    final name = user?.displayName ?? (auth.demoMode ? 'Chế độ demo' : 'Khách');
+    final email = user?.email ?? 'Chưa đăng nhập';
+    final photo = user?.photoURL;
+
+    return SectionCard(
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 32,
+            backgroundColor: AppColors.primarySoft,
+            backgroundImage: (photo != null) ? NetworkImage(photo) : null,
+            child: photo == null
+                ? const Icon(Icons.person_rounded,
+                    color: AppColors.primary, size: 32)
+                : null,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name,
+                    style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.ink)),
+                const SizedBox(height: 4),
+                Text(email,
+                    style: const TextStyle(
+                        fontSize: 13, color: AppColors.muted)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Notification Center ──
+  Widget _notificationCenter() {
+    final messaging = context.watch<MessagingService>();
+    final items = messaging.notifications;
+    return SectionCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: SectionTitle(
+                    title: 'Notification Center',
+                    icon: Icons.notifications_rounded),
+              ),
+              TextButton(
+                onPressed: () =>
+                    context.read<MessagingService>().addSample(),
+                child: const Text('Mẫu'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (items.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Text('Chưa có thông báo nào từ FCM.',
+                  style: TextStyle(color: AppColors.muted, fontSize: 13)),
+            )
+          else
+            ...items.map((n) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primarySoft,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.campaign_rounded,
+                            color: AppColors.primary, size: 18),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(n.title,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w700, fontSize: 13.5)),
+                            if (n.body.isNotEmpty)
+                              Text(n.body,
+                                  style: const TextStyle(
+                                      fontSize: 12.5, color: AppColors.muted)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+        ],
+      ),
+    );
+  }
+
+  // ── Report Export ──
+  Widget _reportExport() {
+    final profile = context.watch<ProfileViewModel>();
+    final dashboard = context.watch<DashboardProvider>();
+    final summary = dashboard.dashboardSummary;
+    final topic = dashboard.currentTopic;
+
+    return SectionCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionTitle(
+              title: 'Xuất báo cáo PDF', icon: Icons.picture_as_pdf_rounded),
+          const SizedBox(height: 12),
+          if (summary == null)
+            const Text(
+                'Hãy tìm một chủ đề ở tab Home trước, rồi quay lại để xuất báo cáo.',
+                style: TextStyle(color: AppColors.muted, fontSize: 13))
+          else ...[
+            Text('Chủ đề: $topic',
+                style: const TextStyle(
+                    fontSize: 13.5, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: profile.exporting
+                    ? null
+                    : () => context
+                        .read<ProfileViewModel>()
+                        .exportAndUpload(topic: topic, summary: summary),
+                icon: profile.exporting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.cloud_upload_rounded, size: 18),
+                label: Text(profile.exporting
+                    ? 'Đang tạo & tải lên…'
+                    : 'Xuất PDF & tải lên Storage'),
+              ),
+            ),
+            if (profile.exportError != null) ...[
+              const SizedBox(height: 10),
+              Text(profile.exportError!,
+                  style: const TextStyle(color: AppColors.danger, fontSize: 12.5)),
+            ],
+            if (profile.reportUrl != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.emerald.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.check_circle_rounded,
+                            color: AppColors.emerald, size: 18),
+                        SizedBox(width: 8),
+                        Text('Đã tải lên Firebase Storage',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.emerald,
+                                fontSize: 13)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    SelectableText(profile.reportUrl!,
+                        style: const TextStyle(
+                            fontSize: 11.5, color: AppColors.body)),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        TextButton.icon(
+                          onPressed: () => _openUrl(profile.reportUrl!),
+                          icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                          label: const Text('Mở'),
+                        ),
+                        TextButton.icon(
+                          onPressed: () {
+                            Clipboard.setData(
+                                ClipboardData(text: profile.reportUrl!));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Đã copy URL')),
+                            );
+                          },
+                          icon: const Icon(Icons.copy_rounded, size: 16),
+                          label: const Text('Copy'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ── Remote Config ──
+  Widget _remoteConfig() {
+    final rc = RemoteConfigService.instance;
+    return SectionCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: SectionTitle(
+                    title: 'Remote Config', icon: Icons.tune_rounded),
+              ),
+              TextButton.icon(
+                onPressed: () async {
+                  await rc.refresh();
+                  if (mounted) setState(() {});
+                },
+                icon: const Icon(Icons.refresh_rounded, size: 16),
+                label: const Text('Làm mới'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          _configRow('max_journals_displayed', '${rc.maxJournals}'),
+          const Divider(height: 20),
+          _configRow('max_keywords_displayed', '${rc.maxKeywords}'),
+        ],
+      ),
+    );
+  }
+
+  Widget _configRow(String key, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(key,
+            style: const TextStyle(fontSize: 13, color: AppColors.body)),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.primarySoft,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(value,
+              style: const TextStyle(
+                  fontWeight: FontWeight.w800, color: AppColors.primary)),
+        ),
+      ],
+    );
+  }
+
+  // ── Crashlytics ──
+  Widget _crashlytics() {
+    return SectionCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionTitle(
+              title: 'Crashlytics Demo', icon: Icons.bug_report_rounded),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () async {
+                    await CrashlyticsService.instance.logHandledException();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Đã gửi handled exception')),
+                      );
+                    }
+                  },
+                  child: const Text('Handled exception'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.danger),
+                  onPressed: () => CrashlyticsService.instance.forceCrash(),
+                  child: const Text('Test crash'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+              'Test crash sẽ đóng app; báo cáo xuất hiện trong Firebase Console sau ít phút.',
+              style: TextStyle(fontSize: 11.5, color: AppColors.faint)),
+        ],
+      ),
+    );
+  }
+
+  Widget _signOutButton() {
+    final auth = context.watch<AuthViewModel>();
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: auth.busy
+            ? null
+            : () => context.read<AuthViewModel>().signOut(),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.danger,
+          side: const BorderSide(color: AppColors.danger, width: 1.4),
+        ),
+        icon: const Icon(Icons.logout_rounded, size: 18),
+        label: const Text('Đăng xuất'),
+      ),
+    );
+  }
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+}
