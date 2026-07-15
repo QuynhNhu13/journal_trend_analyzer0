@@ -9,7 +9,7 @@ import '../services/openalex_service.dart';
 /// by journal and produces per-journal statistics. Honors the
 /// `max_journals_displayed` Remote Config value.
 class JournalsViewModel extends ChangeNotifier {
-  final OpenAlexService _service = OpenAlexService();
+  final OpenAlexService _service = OpenAlexService.instance;
 
   List<JournalStat> journals = [];
   bool isLoading = false;
@@ -29,6 +29,8 @@ class JournalsViewModel extends ChangeNotifier {
 
     try {
       final pubs = await _service.searchPublication(cleaned);
+      // A newer search superseded this one — drop the stale response.
+      if (cleaned != currentTopic) return;
 
       final Map<String, List<Publication>> grouped = {};
       for (final p in pubs) {
@@ -51,10 +53,12 @@ class JournalsViewModel extends ChangeNotifier {
       final limit = RemoteConfigService.instance.maxJournals;
       journals = stats.take(limit).toList();
     } catch (e) {
+      if (cleaned != currentTopic) return;
       errorMessage = 'Không tải được dữ liệu tạp chí: $e';
       journals = [];
     }
 
+    if (cleaned != currentTopic) return;
     isLoading = false;
     notifyListeners();
   }

@@ -18,8 +18,12 @@ dart pub global activate flutterfire_cli
 firebase login
 ```
 
-> Nếu lệnh `flutterfire` báo "not recognized", thêm vào PATH:
-> `C:\Users\LENOVO\AppData\Local\Pub\Cache\bin`
+> Nếu lệnh `flutterfire` báo "not recognized", thêm thư mục bin của Pub cache vào PATH.
+> Dùng biến môi trường (không phụ thuộc tên tài khoản Windows):
+>
+> ```powershell
+> $env:Path += ";$env:LOCALAPPDATA\Pub\Cache\bin"
+> ```
 
 ---
 

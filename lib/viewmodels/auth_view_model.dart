@@ -70,6 +70,18 @@ class AuthViewModel extends ChangeNotifier {
       if (e.code != GoogleSignInExceptionCode.canceled) {
         _error = 'Đăng nhập Google thất bại: ${e.description ?? e.code.name}';
       }
+    } on FirebaseAuthException catch (e) {
+      // On web the popup flow throws when the user closes/cancels the popup —
+      // treat that the same as a cancellation and don't surface an error.
+      const cancelledCodes = {
+        'popup-closed-by-user',
+        'cancelled-popup-request',
+        'web-context-canceled',
+        'user-cancelled',
+      };
+      if (!cancelledCodes.contains(e.code)) {
+        _error = 'Đăng nhập Google thất bại: ${e.message ?? e.code}';
+      }
     } catch (e) {
       _error = e.toString();
     } finally {

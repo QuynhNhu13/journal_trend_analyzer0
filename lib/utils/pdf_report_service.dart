@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 import '../models/dashboard_summary.dart';
 
@@ -19,6 +20,13 @@ class PdfReportService {
     final doc = pw.Document();
     final rose = PdfColor.fromHex('#DB2777');
 
+    // The default base-14 PDF fonts (Helvetica) can't render Vietnamese
+    // diacritics, so load a Unicode-capable font and apply it via the page
+    // theme so every pw.Text/Bullet/TableHelper renders correctly.
+    final baseFont = await PdfGoogleFonts.notoSansRegular();
+    final boldFont = await PdfGoogleFonts.notoSansBold();
+    final theme = pw.ThemeData.withFont(base: baseFont, bold: boldFont);
+
     final trend = summary.publicationTrend
         .where((t) => t.year >= 1900 && t.year <= DateTime.now().year)
         .toList()
@@ -26,6 +34,7 @@ class PdfReportService {
 
     doc.addPage(
       pw.MultiPage(
+        theme: theme,
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(32),
         build: (context) => [

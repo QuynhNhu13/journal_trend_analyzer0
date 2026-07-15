@@ -23,10 +23,24 @@ Future<void> bootstrapFirebase() async {
     );
     firebaseReady = true;
     debugPrint('✅ Firebase initialized.');
+  } catch (e) {
+    // Only a failure of Firebase.initializeApp itself means Firebase is unusable.
+    firebaseReady = false;
+    debugPrint(
+      '⚠️ Firebase chưa sẵn sàng ($e). '
+      'App vẫn chạy nhưng các tính năng Firebase bị tắt. '
+      'Xem FIREBASE_SETUP.md để cấu hình.',
+    );
+    return;
+  }
 
-    // Crashlytics & Messaging (FCM) don't support Flutter web — skip them there
-    // so a web run still initializes Firebase (Auth/Storage/Analytics/Remote Config).
-    if (!kIsWeb) {
+  // Optional background services. Each is isolated so a failure here does NOT
+  // undo core Firebase readiness (Auth/Storage/Analytics still work).
+  //
+  // Crashlytics & Messaging (FCM) don't support Flutter web — skip them there
+  // so a web run still initializes Firebase (Auth/Storage/Analytics/Remote Config).
+  if (!kIsWeb) {
+    try {
       // ── Crashlytics: bắt mọi lỗi Flutter chưa xử lý ──
       FlutterError.onError =
           FirebaseCrashlytics.instance.recordFlutterFatalError;
@@ -40,16 +54,15 @@ Future<void> bootstrapFirebase() async {
       // ── Messaging (FCM) ──
       FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
       await MessagingService.instance.init();
+    } catch (e) {
+      debugPrint('⚠️ Crashlytics/Messaging setup failed ($e).');
     }
+  }
 
-    // ── Remote Config (works on web too) ──
+  // ── Remote Config (works on web too) ──
+  try {
     await RemoteConfigService.instance.init();
   } catch (e) {
-    firebaseReady = false;
-    debugPrint(
-      '⚠️ Firebase chưa sẵn sàng ($e). '
-      'App vẫn chạy nhưng các tính năng Firebase bị tắt. '
-      'Xem FIREBASE_SETUP.md để cấu hình.',
-    );
+    debugPrint('⚠️ Remote Config setup failed ($e).');
   }
 }

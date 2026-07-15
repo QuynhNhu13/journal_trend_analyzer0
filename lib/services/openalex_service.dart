@@ -6,6 +6,10 @@ import '../models/dashboard_summary.dart';
 
 class OpenAlexService{
 
+  /// Shared instance so ViewModels reuse one service (and one Dio client)
+  /// instead of each constructing their own.
+  static final OpenAlexService instance = OpenAlexService();
+
   final Dio dio=Dio(
     BaseOptions(
       connectTimeout: Duration(seconds:10),
@@ -128,7 +132,11 @@ class OpenAlexService{
   Future<List<MapEntry<String, int>>> fetchTopKeywords(String keyword) async {
     try {
       final response = await dio.get(
-        'https://api.openalex.org/works?search=$keyword&group_by=keywords.id',
+        'https://api.openalex.org/works',
+        queryParameters: {
+          'search': keyword,
+          'group_by': 'keywords.id',
+        },
       );
       List results = response.data['group_by'];
       final entries = <MapEntry<String, int>>[];

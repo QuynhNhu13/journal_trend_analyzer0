@@ -41,7 +41,6 @@ class MessagingService extends ChangeNotifier {
 
   Future<void> init() async {
     if (!firebaseReady || _initialized) return;
-    _initialized = true;
     try {
       final fm = _fm!;
       await fm.requestPermission(alert: true, badge: true, sound: true);
@@ -58,6 +57,10 @@ class MessagingService extends ChangeNotifier {
       // Message that launched the app from terminated state.
       final initial = await fm.getInitialMessage();
       if (initial != null) _onMessage(initial);
+
+      // Only latch as initialized once the full setup succeeded, so a failed
+      // attempt can be retried later in the same session.
+      _initialized = true;
     } catch (e) {
       debugPrint('Messaging init error: $e');
     }

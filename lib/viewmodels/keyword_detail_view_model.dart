@@ -7,10 +7,14 @@ import '../services/openalex_service.dart';
 /// ViewModel for Keyword Details (lab §4.7): trends, related journals,
 /// related publications, and top contributing authors (ranked descending).
 class KeywordDetailViewModel extends ChangeNotifier {
-  final OpenAlexService _service = OpenAlexService();
+  final OpenAlexService _service = OpenAlexService.instance;
 
   bool isLoading = false;
   String errorMessage = '';
+
+  /// The keyword of the most recent [load] call, used to discard stale
+  /// in-flight responses that would otherwise overwrite newer results.
+  String _currentKeyword = '';
 
   List<PublicationTrendPoint> trend = [];
   List<TopAuthor> authors = [];
@@ -18,6 +22,7 @@ class KeywordDetailViewModel extends ChangeNotifier {
   List<MapEntry<String, int>> journals = [];
 
   Future<void> load(String keyword) async {
+    _currentKeyword = keyword;
     isLoading = true;
     errorMessage = '';
     notifyListeners();
@@ -28,6 +33,8 @@ class KeywordDetailViewModel extends ChangeNotifier {
         _service.fetchTopAuthors(keyword),
         _service.searchPublication(keyword),
       ]);
+      // A newer load superseded this one — drop the stale response.
+      if (keyword != _currentKeyword) return;
 
       trend = (results[0] as List<PublicationTrendPoint>)
           .where((t) => t.year >= 1900 && t.year <= DateTime.now().year)
@@ -52,9 +59,11 @@ class KeywordDetailViewModel extends ChangeNotifier {
         ..sort((a, b) => b.value.compareTo(a.value));
       journals = journals.take(5).toList();
     } catch (e) {
+      if (keyword != _currentKeyword) return;
       errorMessage = 'Không tải được dữ liệu từ khóa: $e';
     }
 
+    if (keyword != _currentKeyword) return;
     isLoading = false;
     notifyListeners();
   }

@@ -67,11 +67,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
           CircleAvatar(
             radius: 32,
             backgroundColor: AppColors.primarySoft,
-            backgroundImage: (photo != null) ? NetworkImage(photo) : null,
+            // Use Image.network with an errorBuilder so a stale/unreachable
+            // photo URL falls back to the person icon instead of throwing.
             child: photo == null
                 ? const Icon(Icons.person_rounded,
                     color: AppColors.primary, size: 32)
-                : null,
+                : ClipOval(
+                    child: Image.network(
+                      photo,
+                      width: 64,
+                      height: 64,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => const Icon(
+                          Icons.person_rounded,
+                          color: AppColors.primary,
+                          size: 32),
+                    ),
+                  ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -385,8 +397,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _openUrl(String url) async {
     final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    // Treat launchUrl as the source of truth (avoids a check-then-act race with
+    // canLaunchUrl) and surface any failure to the user instead of failing
+    // silently.
+    try {
+      final launched =
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Không mở được liên kết')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Không mở được liên kết: $e')),
+        );
+      }
     }
   }
 }

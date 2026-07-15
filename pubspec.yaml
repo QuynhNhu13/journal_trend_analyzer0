@@ -109,7 +109,7 @@ patrol:
   android:
     package_name: com.example.journal_trend_analyzer
   ios:
-    bundle_id: com.example.journalTrendAnalyzer
+    bundle_id: com.prm.journalTrendAnalyzer
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

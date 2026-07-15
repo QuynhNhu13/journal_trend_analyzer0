@@ -6,7 +6,7 @@ import '../services/openalex_service.dart';
 /// ViewModel for the Keywords tab (lab §4.6). Aggregates the most frequent
 /// keywords for a topic. Honors the `max_keywords_displayed` Remote Config value.
 class KeywordsViewModel extends ChangeNotifier {
-  final OpenAlexService _service = OpenAlexService();
+  final OpenAlexService _service = OpenAlexService.instance;
 
   List<MapEntry<String, int>> keywords = [];
   bool isLoading = false;
@@ -26,13 +26,17 @@ class KeywordsViewModel extends ChangeNotifier {
 
     try {
       final all = await _service.fetchTopKeywords(cleaned);
+      // A newer search superseded this one — drop the stale response.
+      if (cleaned != currentTopic) return;
       final limit = RemoteConfigService.instance.maxKeywords;
       keywords = all.take(limit).toList();
     } catch (e) {
+      if (cleaned != currentTopic) return;
       errorMessage = 'Không tải được dữ liệu từ khóa: $e';
       keywords = [];
     }
 
+    if (cleaned != currentTopic) return;
     isLoading = false;
     notifyListeners();
   }
