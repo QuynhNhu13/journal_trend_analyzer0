@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../firebase/analytics_service.dart';
 import '../l10n/locale_provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../providers/recent_provider.dart';
@@ -11,6 +12,7 @@ import '../providers/top_journal_provider.dart';
 import '../providers/top_author_provider.dart';
 import '../models/dashboard_summary.dart';
 import '../theme/app_theme.dart';
+import '../viewmodels/topic_provider.dart';
 import '../widgets/common.dart';
 import '../widgets/topic_search_bar.dart';
 import 'detail_screen.dart';
@@ -39,6 +41,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _currentSearchText = topic;
     });
     context.read<RecentProvider>().addSearch(topic);
+    // Share the topic with the Journals/Keywords tabs and track analytics.
+    context.read<TopicProvider>().setTopic(topic);
+    AnalyticsService.instance.logSearchTopic(topic);
 
     Provider.of<DashboardProvider>(context, listen: false).search(topic);
     Provider.of<TopJournalProvider>(context, listen: false).search(topic);

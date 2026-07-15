@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
-import 'search_screen.dart';
+import '../widgets/auth_gate.dart';
 
 /// Branded launch screen shown when the app opens. Displays the logo for a
 /// short moment, then fades into the main [SearchScreen].
@@ -28,7 +28,7 @@ class _SplashScreenState extends State<SplashScreen> {
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 450),
-        pageBuilder: (_, _, _) => const SearchScreen(),
+        pageBuilder: (_, _, _) => const AuthGate(),
         transitionsBuilder: (_, animation, _, child) =>
             FadeTransition(opacity: animation, child: child),
       ),
