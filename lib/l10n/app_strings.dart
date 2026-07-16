@@ -419,6 +419,20 @@ class AppStrings {
   String get uploadedToStorage =>
       _t('Uploaded to Firebase Storage', 'Đã tải lên Firebase Storage');
   String get urlCopied => _t('URL copied', 'Đã sao chép URL');
+  // Exported reports history (local only — never touches Storage).
+  String get exportedReportsTitle =>
+      _t('Exported reports', 'Báo cáo đã xuất');
+  String get exportedReportsViewAll => _t('View all', 'Xem tất cả');
+  String get exportedReportsShowLess => _t('Show less', 'Thu gọn');
+  String get exportedReportsRemove => _t('Remove', 'Xóa');
+  String get exportedReportsRemoveTitle =>
+      _t('Remove from history?', 'Xóa khỏi lịch sử?');
+  String get exportedReportsRemoveMessage => _t(
+      'This only removes the entry from this device. The file stays in Firebase Storage.',
+      'Chỉ xóa bản ghi trên thiết bị này. File vẫn còn trên Firebase Storage.');
+  String get exportedReportsRemoved =>
+      _t('Removed from history', 'Đã xóa khỏi lịch sử');
+  String get cancel => _t('Cancel', 'Hủy');
   // Firebase product names — intentionally kept identical in both languages.
   String get remoteConfigTitle => 'Remote Config';
   String get crashlyticsDemoTitle => 'Crashlytics Demo';

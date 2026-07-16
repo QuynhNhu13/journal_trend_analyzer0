@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -7,6 +8,7 @@ import '../firebase/crashlytics_service.dart';
 import '../firebase/messaging_service.dart';
 import '../firebase/remote_config_service.dart';
 import '../l10n/locale_provider.dart';
+import '../models/exported_report.dart';
 import '../providers/dashboard_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/widget_keys.dart';
@@ -27,6 +29,12 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  /// How many history entries show before "View all" is tapped.
+  static const int _historyPreviewCount = 3;
+  static final DateFormat _historyDateFormat = DateFormat('dd/MM/yyyy HH:mm');
+
+  bool _showAllReports = false;
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -255,13 +263,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           label: Text(context.s.open),
                         ),
                         TextButton.icon(
-                          onPressed: () {
-                            Clipboard.setData(
-                                ClipboardData(text: profile.reportUrl!));
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(context.s.urlCopied)),
-                            );
-                          },
+                          onPressed: () => _copyUrl(profile.reportUrl!),
                           icon: const Icon(Icons.copy_rounded, size: 16),
                           label: Text(context.s.copy),
                         ),
@@ -272,8 +274,126 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ],
           ],
+          // History lives outside the `summary == null` branch: past reports
+          // stay reachable even before the user has searched a topic.
+          if (profile.history.isNotEmpty) ..._exportHistory(profile),
         ],
       ),
+    );
+  }
+
+  // ── Exported reports history (local only) ──
+  List<Widget> _exportHistory(ProfileViewModel profile) {
+    final reports = profile.history;
+    final visible =
+        _showAllReports ? reports : reports.take(_historyPreviewCount).toList();
+
+    return [
+      const SizedBox(height: 20),
+      const Divider(height: 1),
+      const SizedBox(height: 14),
+      SectionTitle(
+          title: context.s.exportedReportsTitle, icon: Icons.history_rounded),
+      const SizedBox(height: 4),
+      for (final report in visible) _historyTile(report),
+      if (reports.length > _historyPreviewCount)
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: () =>
+                setState(() => _showAllReports = !_showAllReports),
+            icon: Icon(
+                _showAllReports
+                    ? Icons.expand_less_rounded
+                    : Icons.expand_more_rounded,
+                size: 18),
+            label: Text(_showAllReports
+                ? context.s.exportedReportsShowLess
+                : context.s.exportedReportsViewAll),
+          ),
+        ),
+    ];
+  }
+
+  Widget _historyTile(ExportedReport report) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(report.topic,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontSize: 13.5, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 2),
+                Text(_historyDateFormat.format(report.exportedAt),
+                    style: const TextStyle(
+                        fontSize: 11.5, color: AppColors.muted)),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () => _openUrl(report.url),
+            icon: const Icon(Icons.open_in_new_rounded, size: 18),
+            tooltip: context.s.open,
+            visualDensity: VisualDensity.compact,
+          ),
+          IconButton(
+            onPressed: () => _copyUrl(report.url),
+            icon: const Icon(Icons.copy_rounded, size: 18),
+            tooltip: context.s.copy,
+            visualDensity: VisualDensity.compact,
+          ),
+          IconButton(
+            onPressed: () => _confirmRemoveReport(report),
+            icon: const Icon(Icons.delete_outline_rounded,
+                size: 18, color: AppColors.danger),
+            tooltip: context.s.exportedReportsRemove,
+            visualDensity: VisualDensity.compact,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Removes the entry from the local history only — the file in Firebase
+  /// Storage is never touched.
+  Future<void> _confirmRemoveReport(ExportedReport report) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.s.exportedReportsRemoveTitle),
+        content: Text(context.s.exportedReportsRemoveMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(context.s.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+            child: Text(context.s.exportedReportsRemove),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    await context.read<ProfileViewModel>().removeFromHistory(report);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.s.exportedReportsRemoved)),
+    );
+  }
+
+  void _copyUrl(String url) {
+    Clipboard.setData(ClipboardData(text: url));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.s.urlCopied)),
     );
   }
 
