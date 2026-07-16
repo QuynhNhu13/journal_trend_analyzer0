@@ -56,7 +56,7 @@ class CollapsibleBrandedHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _titleRow(),
+              _titleRow(context),
               AnimatedCrossFade(
                 duration: _duration,
                 sizeCurve: Curves.easeInOut,
@@ -94,21 +94,22 @@ class CollapsibleBrandedHeader extends StatelessWidget {
     );
   }
 
-  Widget _titleRow() {
+  Widget _titleRow(BuildContext context) {
     return Row(
       children: [
         if (onMenuTap != null) ...[
-          Material(
-            color: Colors.white.withValues(alpha: 0.18),
-            shape: const CircleBorder(),
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: onMenuTap,
-              child: const Padding(
-                padding: EdgeInsets.all(9),
-                child: Icon(Icons.menu_rounded, color: Colors.white, size: 22),
-              ),
+          IconButton(
+            onPressed: onMenuTap,
+            tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
+            iconSize: 22,
+            padding: const EdgeInsets.all(9),
+            constraints: const BoxConstraints(),
+            visualDensity: VisualDensity.compact,
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.white.withValues(alpha: 0.18),
+              shape: const CircleBorder(),
             ),
+            icon: const Icon(Icons.menu_rounded, color: Colors.white),
           ),
           const SizedBox(width: 14),
         ],
