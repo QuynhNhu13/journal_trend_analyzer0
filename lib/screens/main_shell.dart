@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../firebase/messaging_service.dart';
 import '../l10n/locale_provider.dart';
 import '../theme/app_theme.dart';
+import '../utils/widget_keys.dart';
 import '../viewmodels/auth_view_model.dart';
 import '../widgets/language_toggle.dart';
 import 'compare_topics_screen.dart';
@@ -93,14 +94,20 @@ class _MainShellState extends State<MainShell> {
         onTap: (i) => setState(() => _index = i),
         items: [
           BottomNavigationBarItem(
-              icon: const Icon(Icons.home_rounded), label: context.s.tabHome),
+              icon: const Icon(Icons.home_rounded,
+                  key: ValueKey(WidgetKeys.tabHome)),
+              label: context.s.tabHome),
           BottomNavigationBarItem(
-              icon: const Icon(Icons.menu_book_rounded),
+              icon: const Icon(Icons.menu_book_rounded,
+                  key: ValueKey(WidgetKeys.tabJournals)),
               label: context.s.tabJournals),
           BottomNavigationBarItem(
-              icon: const Icon(Icons.tag_rounded), label: context.s.tabKeywords),
+              icon: const Icon(Icons.tag_rounded,
+                  key: ValueKey(WidgetKeys.tabKeywords)),
+              label: context.s.tabKeywords),
           BottomNavigationBarItem(
-              icon: const Icon(Icons.person_rounded),
+              icon: const Icon(Icons.person_rounded,
+                  key: ValueKey(WidgetKeys.tabProfile)),
               label: context.s.tabProfile),
         ],
       ),

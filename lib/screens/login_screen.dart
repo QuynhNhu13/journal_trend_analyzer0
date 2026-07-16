@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../l10n/locale_provider.dart';
 import '../theme/app_theme.dart';
+import '../utils/widget_keys.dart';
 import '../viewmodels/auth_view_model.dart';
 
 /// Login screen — Google Sign-In entry point (lab §4.1).
@@ -115,6 +116,7 @@ class _GoogleButton extends StatelessWidget {
       width: double.infinity,
       height: 54,
       child: ElevatedButton(
+        key: const ValueKey(WidgetKeys.googleSigninButton),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.white,
           foregroundColor: AppColors.ink,

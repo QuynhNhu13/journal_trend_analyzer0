@@ -9,6 +9,7 @@ import '../firebase/remote_config_service.dart';
 import '../l10n/locale_provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../theme/app_theme.dart';
+import '../utils/widget_keys.dart';
 import '../viewmodels/auth_view_model.dart';
 import '../viewmodels/profile_view_model.dart';
 import '../widgets/common.dart';
@@ -117,6 +118,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final messaging = context.watch<MessagingService>();
     final items = messaging.notifications;
     return SectionCard(
+      key: const ValueKey(WidgetKeys.notificationCenterCard),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -194,6 +196,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
+                key: const ValueKey(WidgetKeys.exportPdfButton),
                 onPressed: profile.exporting
                     ? null
                     : () => context
@@ -289,6 +292,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     icon: Icons.tune_rounded),
               ),
               TextButton.icon(
+                key: const ValueKey(WidgetKeys.remoteConfigRefresh),
                 onPressed: () async {
                   await rc.refresh();
                   if (mounted) setState(() {});
@@ -299,9 +303,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          _configRow(context.s.rcMaxJournalsLabel, '${rc.maxJournals}'),
+          _configRow(context.s.rcMaxJournalsLabel, '${rc.maxJournals}',
+              rowKey: const ValueKey(WidgetKeys.remoteConfigJournalsValue)),
           const Divider(height: 20),
-          _configRow(context.s.rcMaxKeywordsLabel, '${rc.maxKeywords}'),
+          _configRow(context.s.rcMaxKeywordsLabel, '${rc.maxKeywords}',
+              rowKey: const ValueKey(WidgetKeys.remoteConfigKeywordsValue)),
           const SizedBox(height: 12),
           Text(context.s.remoteConfigCaption,
               style: const TextStyle(
@@ -313,8 +319,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _configRow(String key, String value) {
+  Widget _configRow(String key, String value, {Key? rowKey}) {
     return Row(
+      key: rowKey,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(key,
@@ -383,6 +390,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
+        key: const ValueKey(WidgetKeys.signoutButton),
         onPressed: auth.busy
             ? null
             : () => context.read<AuthViewModel>().signOut(),

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../l10n/locale_provider.dart';
 import '../models/journal_stat.dart';
 import '../theme/app_theme.dart';
+import '../utils/widget_keys.dart';
 import '../viewmodels/journals_view_model.dart';
 import '../viewmodels/topic_provider.dart';
 import '../viewmodels/topic_reset.dart';
@@ -63,6 +64,8 @@ class _JournalsScreenState extends State<JournalsScreen>
                 hintText: context.s.searchTopicHint,
                 initialValue: topic,
                 onSearch: _search,
+                fieldKey: const ValueKey(WidgetKeys.searchFieldJournals),
+                submitKey: const ValueKey(WidgetKeys.searchSubmit),
               ),
               if (topic.isNotEmpty) ...[
                 const SizedBox(height: 12),
@@ -159,6 +162,9 @@ class _JournalsScreenState extends State<JournalsScreen>
               final i = entry.key;
               final j = entry.value;
               return Column(
+                key: i == 0
+                    ? const ValueKey(WidgetKeys.journalListFirst)
+                    : null,
                 children: [
                   ListTile(
                     leading: RankBadge(rank: i + 1),

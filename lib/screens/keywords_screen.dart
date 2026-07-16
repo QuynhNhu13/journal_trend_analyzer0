@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../l10n/locale_provider.dart';
 import '../theme/app_theme.dart';
+import '../utils/widget_keys.dart';
 import '../viewmodels/keywords_view_model.dart';
 import '../viewmodels/topic_provider.dart';
 import '../viewmodels/topic_reset.dart';
@@ -62,6 +63,8 @@ class _KeywordsScreenState extends State<KeywordsScreen>
                 hintText: context.s.searchTopicHint,
                 initialValue: topic,
                 onSearch: _search,
+                fieldKey: const ValueKey(WidgetKeys.searchFieldKeywords),
+                submitKey: const ValueKey(WidgetKeys.searchSubmit),
               ),
               if (topic.isNotEmpty) ...[
                 const SizedBox(height: 12),
@@ -146,9 +149,13 @@ class _KeywordsScreenState extends State<KeywordsScreen>
         const SizedBox(height: 12),
         SectionCard(
           child: Column(
-            children: keywords
-                .map((k) => _bar(k.key, k.value, vm.maxCount))
-                .toList(),
+            children: keywords.asMap().entries.map((e) {
+              final k = e.value;
+              return _bar(k.key, k.value, vm.maxCount,
+                  barKey: e.key == 0
+                      ? const ValueKey(WidgetKeys.keywordListFirst)
+                      : null);
+            }).toList(),
           ),
         ),
       ],
@@ -162,9 +169,10 @@ class _KeywordsScreenState extends State<KeywordsScreen>
     );
   }
 
-  Widget _bar(String name, int count, int maxCount) {
+  Widget _bar(String name, int count, int maxCount, {Key? barKey}) {
     final fraction = (count / maxCount).clamp(0.05, 1.0);
     return InkWell(
+      key: barKey,
       onTap: () => _open(name),
       borderRadius: BorderRadius.circular(8),
       child: Padding(
