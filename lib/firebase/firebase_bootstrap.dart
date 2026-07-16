@@ -53,6 +53,11 @@ Future<void> bootstrapFirebase() async {
 
       // ── Messaging (FCM) ──
       FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+      // In FCM token ra console để dán vào Firebase Console → Cloud Messaging →
+      // "Send test message". Chạy độc lập, không phụ thuộc init() bên dưới.
+      FirebaseMessaging.instance
+          .getToken()
+          .then((t) => debugPrint('FCM TOKEN: $t'));
       await MessagingService.instance.init();
     } catch (e) {
       debugPrint('⚠️ Crashlytics/Messaging setup failed ($e).');

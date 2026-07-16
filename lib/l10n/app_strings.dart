@@ -405,7 +405,6 @@ class AppStrings {
   String get profileNotSignedIn => _t('Not signed in', 'Chưa đăng nhập');
   String get notificationCenterTitle =>
       _t('Notification Center', 'Trung tâm thông báo');
-  String get sampleButton => _t('Sample', 'Mẫu');
   String get noNotifications =>
       _t('No FCM notifications yet.', 'Chưa có thông báo nào từ FCM.');
   String get exportPdfTitle => _t('Export PDF report', 'Xuất báo cáo PDF');

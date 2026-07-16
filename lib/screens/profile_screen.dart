@@ -120,20 +120,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: SectionTitle(
-                    title: context.s.notificationCenterTitle,
-                    icon: Icons.notifications_rounded),
-              ),
-              TextButton(
-                onPressed: () =>
-                    context.read<MessagingService>().addSample(),
-                child: Text(context.s.sampleButton),
-              ),
-            ],
-          ),
+          SectionTitle(
+              title: context.s.notificationCenterTitle,
+              icon: Icons.notifications_rounded),
           const SizedBox(height: 8),
           if (items.isEmpty)
             Padding(

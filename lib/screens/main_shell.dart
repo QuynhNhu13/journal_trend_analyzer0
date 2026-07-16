@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../firebase/messaging_service.dart';
 import '../l10n/locale_provider.dart';
 import '../theme/app_theme.dart';
 import '../viewmodels/auth_view_model.dart';
@@ -26,6 +27,33 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _index = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  /// Notification Center lives on the Profile tab.
+  static const int _profileTabIndex = 3;
+
+  @override
+  void initState() {
+    super.initState();
+    // A tapped FCM notification asks us to open the Notification Center.
+    MessagingService.instance.addListener(_handleMessagingSignal);
+    // Also handle a request that arrived before this widget mounted (e.g. the
+    // app was launched from a killed state by tapping a notification).
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _handleMessagingSignal());
+  }
+
+  @override
+  void dispose() {
+    MessagingService.instance.removeListener(_handleMessagingSignal);
+    super.dispose();
+  }
+
+  void _handleMessagingSignal() {
+    if (MessagingService.instance.takeOpenNotificationCenterRequest() &&
+        mounted) {
+      setState(() => _index = _profileTabIndex);
+    }
+  }
 
   void _openDrawer() => _scaffoldKey.currentState?.openDrawer();
 
