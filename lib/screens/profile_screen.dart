@@ -299,9 +299,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          _configRow('max_journals_displayed', '${rc.maxJournals}'),
+          _configRow(context.s.rcMaxJournalsLabel, '${rc.maxJournals}'),
           const Divider(height: 20),
-          _configRow('max_keywords_displayed', '${rc.maxKeywords}'),
+          _configRow(context.s.rcMaxKeywordsLabel, '${rc.maxKeywords}'),
+          const SizedBox(height: 12),
+          Text(context.s.remoteConfigCaption,
+              style: const TextStyle(
+                  fontSize: 11.5,
+                  color: AppColors.faint,
+                  fontStyle: FontStyle.italic)),
         ],
       ),
     );

@@ -422,6 +422,14 @@ class AppStrings {
   // Firebase product names — intentionally kept identical in both languages.
   String get remoteConfigTitle => 'Remote Config';
   String get crashlyticsDemoTitle => 'Crashlytics Demo';
+  // Friendly labels for the Remote Config keys (the real keys are unchanged).
+  String get rcMaxJournalsLabel =>
+      _t('Max journals displayed', 'Số tạp chí hiển thị tối đa');
+  String get rcMaxKeywordsLabel =>
+      _t('Max keywords displayed', 'Số từ khóa hiển thị tối đa');
+  String get remoteConfigCaption => _t(
+      'Values controlled remotely via Firebase Remote Config',
+      'Giá trị được điều khiển từ xa qua Firebase Remote Config');
   String get handledExceptionButton =>
       _t('Handled exception', 'Ngoại lệ đã xử lý');
   String get testCrashButton => _t('Test crash', 'Thử gây crash');

@@ -168,7 +168,7 @@ class OpenAlexService{
           'group_by': 'keywords.id',
         },
       );
-      List results = response.data['group_by'];
+      final results = _asList(response.data['group_by']);
       final entries = <MapEntry<String, int>>[];
       for (var e in results) {
         final name = e['key_display_name']?.toString().trim() ?? '';
