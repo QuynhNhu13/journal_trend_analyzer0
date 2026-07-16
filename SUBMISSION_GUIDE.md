@@ -31,32 +31,33 @@ Cách xem để chụp ảnh báo cáo:
 ---
 
 ## 2. Patrol E2E tests (15% điểm)
-Đã viết sẵn 11 test case trong `integration_test/` (7 file theo đúng cấu trúc lab).
+Đã viết sẵn 11 test case trong `patrol_test/` (7 file + `test_helpers.dart`).
+Chi tiết đầy đủ: xem `PATROL_E2E_SUMMARY.md`.
 
 Cài Patrol CLI và chạy:
 ```powershell
 dart pub global activate patrol_cli
-patrol test                      # chạy tất cả
-patrol test -t integration_test/journal_test.dart   # chạy 1 file
+patrol test -d RF8N5140DBL                                # chạy tất cả
+patrol test -t patrol_test/journal_test.dart -d RF8N5140DBL   # chạy 1 file
 ```
-> Lưu ý: các test (trừ TC1 Google Sign-In) dùng **chế độ demo** để chạy được không cần tài khoản Google. TC1/TC11 cần thiết bị đã cấu hình Firebase. Các finder theo text tiếng Việt trong UI — nếu bạn đổi chữ thì cập nhật finder tương ứng.
+> Lưu ý: test chạy trên **điện thoại Android thật** đã đăng nhập sẵn tài khoản Google (Settings → Accounts) — TC1 dùng popup native để sign-in thật, không dùng chế độ demo. Mọi finder bám **ValueKey** trong `lib/utils/widget_keys.dart`, không theo text, nên đổi ngôn ngữ EN/VI không làm vỡ test.
 
 **Bằng chứng cần nộp:** screenshot mã nguồn test, screenshot lúc chạy (pass/fail), bảng tóm tắt kết quả, giải thích ngắn từng test.
 
 Bảng test case:
 | # | File | Kịch bản |
 |---|---|---|
-| 1 | authentication_test.dart | Google Sign-In → Home |
+| 1 | auth_test.dart | Google Sign-In → Home |
 | 2 | publication_test.dart | Tìm chủ đề → có kết quả |
 | 3 | publication_test.dart | Mở chi tiết công bố |
-| 4 | journal_test.dart | Tab Journals → danh sách |
+| 4 | navigation_test.dart | Tab Journals → thống kê + danh sách |
 | 5 | journal_test.dart | Chi tiết tạp chí |
-| 6 | keyword_test.dart | Tab Keywords → danh sách |
+| 6 | navigation_test.dart | Tab Keywords → thống kê + danh sách |
 | 7 | keyword_test.dart | Chi tiết từ khóa |
-| 8 | profile_test.dart | Tab Profile → thông tin |
+| 8 | navigation_test.dart | Tab Profile → thông tin user |
 | 9 | export_test.dart | Xuất PDF → upload Storage |
 | 10 | remote_config_test.dart | Hiển thị Remote Config |
-| 11 | authentication_test.dart | Đăng xuất → Login |
+| 11 | auth_test.dart | Đăng xuất → Login |
 
 ---
 

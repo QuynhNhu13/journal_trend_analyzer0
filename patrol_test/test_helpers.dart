@@ -24,6 +24,10 @@ const Duration networkTimeout = Duration(seconds: 30);
 /// Timeout cho các chuyển màn hình cục bộ (không gọi mạng).
 const Duration uiTimeout = Duration(seconds: 10);
 
+/// Timeout riêng cho TC9: dựng PDF (tải font Noto + render chart) rồi upload
+/// lên Firebase Storage — chuỗi này lâu hơn hẳn một request OpenAlex.
+const Duration uploadTimeout = Duration(seconds: 60);
+
 /// Splash hiện 2200ms rồi fade 450ms sang AuthGate.
 const Duration _splashDuration = Duration(milliseconds: 3000);
 

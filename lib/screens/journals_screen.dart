@@ -122,6 +122,7 @@ class _JournalsScreenState extends State<JournalsScreen>
       children: [
         // Summary
         Row(
+          key: const ValueKey(WidgetKeys.journalsStats),
           children: [
             Expanded(
                 child: _stat(context.s.statJournals, '${journals.length}',

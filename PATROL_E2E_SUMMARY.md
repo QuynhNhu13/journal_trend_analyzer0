@@ -46,17 +46,24 @@ không truyền tham số này — dùng config mặc định.
 
 ## 2. Thay đổi trong `lib/` (chỉ thêm key, không đổi logic)
 
-Tổng cộng **+7 dòng**, không ảnh hưởng hành vi app:
+Không thay đổi hành vi app — chỉ gắn thêm `ValueKey` để test bám vào:
 
 | File | Thay đổi |
 |---|---|
-| `lib/utils/widget_keys.dart` | Thêm hằng `dashboardPaperDetails = 'dashboard_paper_details'` |
-| `lib/screens/dashboard_screen.dart` | Gắn key trên vào nút *Details* của card "Most Influential Paper" |
+| `lib/utils/widget_keys.dart` | Thêm 4 hằng: `dashboardPaperDetails`, `profileUserCard`, `journalsStats`, `keywordsStats` |
+| `lib/screens/dashboard_screen.dart` | Gắn `dashboardPaperDetails` vào nút *Details* của card "Most Influential Paper" |
+| `lib/screens/profile_screen.dart` | Gắn `profileUserCard` vào card thông tin user (tên/email/avatar) |
+| `lib/screens/journals_screen.dart` | Gắn `journalsStats` vào Row thống kê (journals / publications / citations) |
+| `lib/screens/keywords_screen.dart` | Gắn `keywordsStats` vào card "Trending keywords" |
 
-**Lý do:** TC3 yêu cầu tap publication đầu tiên **từ kết quả search ở Home**, nhưng nút Details của
-card "Most Influential Paper" chưa có key nào. Key `publication_list_first` sẵn có **không dùng được**
-vì nó chỉ được gắn ở `journal_detail_screen.dart` — tái dùng sẽ khiến 1 key tồn tại ở 2 nơi cùng
-mounted (Home + Journal Detail), gây finder mơ hồ (ambiguous). Vì vậy dùng key mới, riêng biệt.
+**Lý do `dashboardPaperDetails`:** TC3 yêu cầu tap publication đầu tiên **từ kết quả search ở Home**,
+nhưng nút Details của card "Most Influential Paper" chưa có key nào. Key `publication_list_first` sẵn
+có **không dùng được** vì nó chỉ được gắn ở `journal_detail_screen.dart` — tái dùng sẽ khiến 1 key tồn
+tại ở 2 nơi cùng mounted (Home + Journal Detail), gây finder mơ hồ (ambiguous).
+
+**Lý do 3 key còn lại:** đề bài đòi TC4/TC6 verify **cả "statistics" lẫn "list"**, và TC8 verify
+**"user profile information"**. Các khối đó trước đây không có key nên test chỉ verify được phần
+"list" (TC4/TC6) và card Notification Center (TC8) — tức là thiếu so với đề.
 
 ---
 
@@ -69,12 +76,12 @@ Thiết bị test: **`RF8N5140DBL`** (SM A315G, Android 12).
 | TC1 | Google Sign-In — logout trước → verify về Login → sign-in đầy đủ qua popup native → verify vào Home | `patrol_test/auth_test.dart` | `patrol test -t patrol_test/auth_test.dart -d RF8N5140DBL` |
 | TC2 | Topic Search — search "machine learning" → verify `dashboard_total_papers` + danh sách kết quả | `patrol_test/publication_test.dart` | `patrol test -t patrol_test/publication_test.dart -d RF8N5140DBL` |
 | TC3 | Publication Details — tap publication đầu tiên → verify `publication_detail_title` | `patrol_test/publication_test.dart` | `patrol test -t patrol_test/publication_test.dart -d RF8N5140DBL` |
-| TC4 | Journals Navigation — tab Journals → verify `journal_list_first` | `patrol_test/navigation_test.dart` | `patrol test -t patrol_test/navigation_test.dart -d RF8N5140DBL` |
+| TC4 | Journals Navigation — tab Journals → verify `journals_stats` + `journal_list_first` | `patrol_test/navigation_test.dart` | `patrol test -t patrol_test/navigation_test.dart -d RF8N5140DBL` |
 | TC5 | Journal Details — tap journal đầu tiên → verify `journal_detail_title` + thống kê | `patrol_test/journal_test.dart` | `patrol test -t patrol_test/journal_test.dart -d RF8N5140DBL` |
-| TC6 | Keywords Navigation — tab Keywords → verify `keyword_list_first` | `patrol_test/navigation_test.dart` | `patrol test -t patrol_test/navigation_test.dart -d RF8N5140DBL` |
+| TC6 | Keywords Navigation — tab Keywords → verify `keywords_stats` + `keyword_list_first` | `patrol_test/navigation_test.dart` | `patrol test -t patrol_test/navigation_test.dart -d RF8N5140DBL` |
 | TC7 | Keyword Details — tap keyword đầu tiên → verify `keyword_detail_title` + trend | `patrol_test/keyword_test.dart` | `patrol test -t patrol_test/keyword_test.dart -d RF8N5140DBL` |
-| TC8 | Profile Navigation — tab Profile → verify `notification_center_card` | `patrol_test/navigation_test.dart` | `patrol test -t patrol_test/navigation_test.dart -d RF8N5140DBL` |
-| TC9 | PDF Export — export → verify URL upload (**SKIP**, xem §6) | `patrol_test/export_test.dart` | `patrol test -t patrol_test/export_test.dart -d RF8N5140DBL` |
+| TC8 | Profile Navigation — tab Profile → verify `profile_user_card` (tên/email/avatar) | `patrol_test/navigation_test.dart` | `patrol test -t patrol_test/navigation_test.dart -d RF8N5140DBL` |
+| TC9 | PDF Export — export → upload Storage → verify URL hiển thị (timeout 60s) | `patrol_test/export_test.dart` | `patrol test -t patrol_test/export_test.dart -d RF8N5140DBL` |
 | TC10 | Remote Config — verify 2 dòng giá trị → refresh → verify vẫn hiển thị | `patrol_test/remote_config_test.dart` | `patrol test -t patrol_test/remote_config_test.dart -d RF8N5140DBL` |
 | TC11 | Logout — tab Profile → `signout_button` → verify về Login screen | `patrol_test/auth_test.dart` | `patrol test -t patrol_test/auth_test.dart -d RF8N5140DBL` |
 
@@ -145,21 +152,20 @@ finder theo widget type (`$(ListView)` ở TC7, `$(SelectableText)` ở TC9) cũ
 
 ---
 
-## 6. TC9 — PDF Export bị SKIP
+## 6. TC9 — PDF Export (đã bật)
 
-```dart
-patrolTest(
-  'TC9 - PDF Export',
-  skip: true,   // Chờ Firebase Storage bucket được kích hoạt (Blaze plan)
-  ($) async { ... },
-);
-```
+Firebase Storage đã kích hoạt (Blaze plan, bucket đã tạo) nên `skip: true` đã được **gỡ bỏ** — TC9
+chạy thật như 10 test còn lại.
 
-Test đã viết **đầy đủ** kịch bản (login → search → tab Profile → tap `export_pdf_button` → verify URL).
-Khi Firebase Storage sẵn sàng, chỉ cần **xoá dòng `skip: true`** là chạy được ngay.
+Kịch bản: login → search topic → tab Profile → tap `export_pdf_button` → chờ tạo PDF + upload →
+verify URL hiển thị.
 
-Lưu ý: nút `export_pdf_button` chỉ render khi `dashboardSummary != null` — bắt buộc phải search trước,
-nếu không sẽ chỉ thấy dòng hint và nút không tồn tại trong tree.
+Hai lưu ý về timing và điều kiện:
+
+- Nút `export_pdf_button` **chỉ render khi `dashboardSummary != null`** — bắt buộc search trước, nếu
+  không sẽ chỉ thấy dòng hint và nút không tồn tại trong tree. Đây là lý do TC9 gọi `searchTopic`.
+- Bước chờ upload dùng `uploadTimeout = 60s` (không phải 30s như các bước mạng khác): chuỗi này gồm
+  tải font Noto + render chart + dựng PDF + upload lên Storage, lâu hơn hẳn một request OpenAlex.
 
 ---
 
@@ -194,12 +200,15 @@ Cả 3 issue đều là **info có sẵn từ trước** trong `lib/`, không li
 
 ---
 
-## 9. Việc còn tồn đọng (cần bạn quyết định)
+## 9. Việc còn tồn đọng
 
-**Thư mục `integration_test/` cũ vẫn còn 8 file test trùng mục đích.** Chúng dùng "demo mode" — nhánh
-chỉ xuất hiện khi Firebase init **thất bại**, nên trên máy cấu hình đúng thì các test đó không đi qua
-được màn Login. Patrol không chạy chúng (CLI mặc định đọc `patrol_test/`), nhưng để lại dễ gây nhầm khi
-nộp bài. Cân nhắc xoá hoặc ghi chú rõ là code cũ.
+**Thư mục `integration_test/` cũ đã được xoá** (8 file demo-mode trùng mục đích). Mọi tham chiếu trong
+`SUBMISSION_GUIDE.md` đã cập nhật sang `patrol_test/`.
+
+> Lưu ý kỹ thuật: dev_dependency `integration_test` trong `pubspec.yaml` **phải giữ nguyên** — đó là
+> package của Flutter SDK, không phải thư mục. Patrol CLI còn tự sinh lại
+> `integration_test/patrol_test_bundle.dart` làm proxy entrypoint cho DevTools mỗi lần chạy; đó là file
+> generated, không phải code cũ quay lại.
 
 **Luồng popup Google chưa được chạy thật để xác minh.** Nếu popup trên máy bạn có thêm bước xác nhận
 ("Continue"/"Tiếp tục") sau khi chọn tài khoản, `signInWithGoogle` sẽ cần thêm một lần `$.platform.tap`

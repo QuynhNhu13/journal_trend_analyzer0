@@ -76,6 +76,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final photo = user?.photoURL;
 
     return SectionCard(
+      key: const ValueKey(WidgetKeys.profileUserCard),
       child: Row(
         children: [
           CircleAvatar(

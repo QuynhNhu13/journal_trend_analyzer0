@@ -116,6 +116,7 @@ class _KeywordsScreenState extends State<KeywordsScreen>
       children: [
         // Trending keywords as chips (top 8)
         SectionCard(
+          key: const ValueKey(WidgetKeys.keywordsStats),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

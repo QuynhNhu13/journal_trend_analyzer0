@@ -35,6 +35,16 @@ class WidgetKeys {
   static const String exportPdfButton = 'export_pdf_button';
   static const String notificationCenterCard = 'notification_center_card';
 
+  /// Card holding the signed-in user's name, email and avatar.
+  static const String profileUserCard = 'profile_user_card';
+
+  // ── Statistics blocks (shown alongside each list) ──
+  /// Journals tab: the journals / publications / citations summary row.
+  static const String journalsStats = 'journals_stats';
+
+  /// Keywords tab: the trending-keywords summary card.
+  static const String keywordsStats = 'keywords_stats';
+
   // ── First items of the publication / journal / keyword lists ──
   static const String publicationListFirst = 'publication_list_first';
   static const String journalListFirst = 'journal_list_first';

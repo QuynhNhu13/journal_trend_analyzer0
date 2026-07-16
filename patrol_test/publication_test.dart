@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:journal_trend_analyzer/screens/detail_screen.dart';
 import 'package:journal_trend_analyzer/utils/widget_keys.dart';
 import 'package:patrol/patrol.dart';
 
@@ -44,7 +45,8 @@ void main() {
     );
     expect($(const Key(WidgetKeys.publicationDetailTitle)).visible, true);
 
-    // Màn detail phải render nội dung bài báo, không chỉ mỗi AppBar.
-    expect($(Text).exists, true);
+    // Màn detail phải render nội dung bài báo, không chỉ mỗi AppBar. Scope
+    // trong DetailScreen vì $(Text) trần khớp mọi tab đang mounted.
+    expect($(DetailScreen).$(Text).exists, true);
   });
 }
