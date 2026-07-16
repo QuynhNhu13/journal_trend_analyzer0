@@ -6,6 +6,7 @@ import '../theme/app_theme.dart';
 import '../viewmodels/keywords_view_model.dart';
 import '../viewmodels/topic_provider.dart';
 import '../viewmodels/topic_reset.dart';
+import '../widgets/collapsible_branded_header.dart';
 import '../widgets/common.dart';
 import '../widgets/current_topic_chip.dart';
 import '../widgets/topic_search_bar.dart';
@@ -20,7 +21,8 @@ class KeywordsScreen extends StatefulWidget {
   State<KeywordsScreen> createState() => _KeywordsScreenState();
 }
 
-class _KeywordsScreenState extends State<KeywordsScreen> {
+class _KeywordsScreenState extends State<KeywordsScreen>
+    with HeaderCollapseMixin {
   String? _lastLoaded;
 
   void _search(String topic) {
@@ -47,12 +49,14 @@ class _KeywordsScreenState extends State<KeywordsScreen> {
 
     return Column(
       children: [
-        BrandedHeader(
+        CollapsibleBrandedHeader(
           title: context.s.keywordsTabTitle,
           subtitle: context.s.keywordsTabSubtitle,
           onMenuTap: widget.onMenuTap,
+          collapsed: headerCollapsed,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
             children: [
               TopicSearchBar(
                 hintText: context.s.searchTopicHint,
@@ -67,7 +71,12 @@ class _KeywordsScreenState extends State<KeywordsScreen> {
             ],
           ),
         ),
-        Expanded(child: _body(vm)),
+        Expanded(
+          child: NotificationListener<UserScrollNotification>(
+            onNotification: onBodyScroll,
+            child: _body(vm),
+          ),
+        ),
       ],
     );
   }

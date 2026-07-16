@@ -7,6 +7,7 @@ import '../theme/app_theme.dart';
 import '../viewmodels/journals_view_model.dart';
 import '../viewmodels/topic_provider.dart';
 import '../viewmodels/topic_reset.dart';
+import '../widgets/collapsible_branded_header.dart';
 import '../widgets/common.dart';
 import '../widgets/current_topic_chip.dart';
 import '../widgets/topic_search_bar.dart';
@@ -21,7 +22,8 @@ class JournalsScreen extends StatefulWidget {
   State<JournalsScreen> createState() => _JournalsScreenState();
 }
 
-class _JournalsScreenState extends State<JournalsScreen> {
+class _JournalsScreenState extends State<JournalsScreen>
+    with HeaderCollapseMixin {
   String? _lastLoaded;
 
   void _search(String topic) {
@@ -48,12 +50,14 @@ class _JournalsScreenState extends State<JournalsScreen> {
 
     return Column(
       children: [
-        BrandedHeader(
+        CollapsibleBrandedHeader(
           title: context.s.journalsTabTitle,
           subtitle: context.s.journalsTabSubtitle,
           onMenuTap: widget.onMenuTap,
+          collapsed: headerCollapsed,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
             children: [
               TopicSearchBar(
                 hintText: context.s.searchTopicHint,
@@ -68,7 +72,12 @@ class _JournalsScreenState extends State<JournalsScreen> {
             ],
           ),
         ),
-        Expanded(child: _body(vm)),
+        Expanded(
+          child: NotificationListener<UserScrollNotification>(
+            onNotification: onBodyScroll,
+            child: _body(vm),
+          ),
+        ),
       ],
     );
   }

@@ -14,6 +14,7 @@ import '../models/dashboard_summary.dart';
 import '../theme/app_theme.dart';
 import '../viewmodels/topic_provider.dart';
 import '../viewmodels/topic_reset.dart';
+import '../widgets/collapsible_branded_header.dart';
 import '../widgets/common.dart';
 import '../widgets/current_topic_chip.dart';
 import '../widgets/topic_search_bar.dart';
@@ -29,7 +30,8 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen>
+    with HeaderCollapseMixin {
   String _currentSearchText = "";
 
   void _onSearch(String topic) {
@@ -64,79 +66,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<DashboardProvider>(context);
+    // The shared research topic drives the search bar text on all three tabs.
+    final topic = context.watch<TopicProvider>().topic;
 
     return Column(
       children: [
-        _buildHeader(provider),
-        Expanded(child: _buildBody(context, provider)),
-      ],
-    );
-  }
-
-  // ─── Header with search ─────────────────────────────────
-
-  Widget _buildHeader(DashboardProvider provider) {
-    // The shared research topic drives the search bar text on all three tabs.
-    final topic = context.watch<TopicProvider>().topic;
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: AppGradients.brand,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(AppRadius.xl),
-          bottomRight: Radius.circular(AppRadius.xl),
-        ),
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        CollapsibleBrandedHeader(
+          title: context.s.dashboardTitle,
+          subtitle: context.s.searchHeaderSubtitle,
+          onMenuTap: () => widget.scaffoldKey?.currentState?.openDrawer(),
+          collapsed: headerCollapsed,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                children: [
-                  Material(
-                    color: Colors.white.withValues(alpha: 0.18),
-                    shape: const CircleBorder(),
-                    child: InkWell(
-                      customBorder: const CircleBorder(),
-                      onTap: () {
-                        widget.scaffoldKey?.currentState?.openDrawer();
-                      },
-                      child: const Padding(
-                        padding: EdgeInsets.all(9),
-                        child: Icon(Icons.menu_rounded,
-                            color: Colors.white, size: 22),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          context.s.dashboardTitle,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 21,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.4,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          context.s.searchHeaderSubtitle,
-                          style: const TextStyle(
-                              color: Colors.white70, fontSize: 13),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 22),
               TopicSearchBar(
                 hintText: context.s.searchTopicHint,
                 initialValue: topic,
@@ -152,7 +95,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
         ),
-      ),
+        Expanded(
+          child: NotificationListener<UserScrollNotification>(
+            onNotification: onBodyScroll,
+            child: _buildBody(context, provider),
+          ),
+        ),
+      ],
     );
   }
 
