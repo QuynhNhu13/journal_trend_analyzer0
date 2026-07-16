@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../l10n/locale_provider.dart';
 import '../models/journal_stat.dart';
 import '../theme/app_theme.dart';
 import '../viewmodels/journals_view_model.dart';
 import '../viewmodels/topic_provider.dart';
+import '../viewmodels/topic_reset.dart';
+import '../widgets/collapsible_branded_header.dart';
 import '../widgets/common.dart';
+import '../widgets/current_topic_chip.dart';
 import '../widgets/topic_search_bar.dart';
 import 'journal_detail_screen.dart';
 
@@ -18,7 +22,8 @@ class JournalsScreen extends StatefulWidget {
   State<JournalsScreen> createState() => _JournalsScreenState();
 }
 
-class _JournalsScreenState extends State<JournalsScreen> {
+class _JournalsScreenState extends State<JournalsScreen>
+    with HeaderCollapseMixin {
   String? _lastLoaded;
 
   void _search(String topic) {
@@ -32,8 +37,11 @@ class _JournalsScreenState extends State<JournalsScreen> {
     final vm = context.watch<JournalsViewModel>();
     final topic = context.watch<TopicProvider>().topic;
 
-    // Auto-load when Home has set a topic we haven't loaded yet.
-    if (topic.isNotEmpty && topic != _lastLoaded && !vm.isLoading) {
+    // Keep the tab in sync with the shared topic: auto-load a newly set topic,
+    // and forget the last-loaded topic once it has been cleared.
+    if (topic.isEmpty) {
+      _lastLoaded = null;
+    } else if (topic != _lastLoaded && !vm.isLoading) {
       _lastLoaded = topic;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) context.read<JournalsViewModel>().search(topic);
@@ -42,32 +50,61 @@ class _JournalsScreenState extends State<JournalsScreen> {
 
     return Column(
       children: [
-        BrandedHeader(
-          title: 'Journals',
-          subtitle: 'Phân tích theo tạp chí',
+        CollapsibleBrandedHeader(
+          title: context.s.journalsTabTitle,
+          subtitle: context.s.journalsTabSubtitle,
           onMenuTap: widget.onMenuTap,
-          child: TopicSearchBar(
-            hintText: 'Nhập chủ đề để phân tích tạp chí',
-            initialValue: vm.currentTopic.isEmpty ? topic : vm.currentTopic,
-            onSearch: _search,
+          collapsed: headerCollapsed,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TopicSearchBar(
+                hintText: context.s.searchTopicHint,
+                initialValue: topic,
+                onSearch: _search,
+              ),
+              if (topic.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                CurrentTopicChip(
+                    topic: topic, onClear: () => clearGlobalTopic(context)),
+              ],
+            ],
           ),
         ),
-        Expanded(child: _body(vm)),
+        Expanded(
+          child: NotificationListener<UserScrollNotification>(
+            onNotification: onBodyScroll,
+            child: _body(vm),
+          ),
+        ),
       ],
     );
   }
 
   Widget _body(JournalsViewModel vm) {
-    if (vm.isLoading) return StateView.loading(message: 'Đang tải tạp chí…');
+    if (vm.isLoading) {
+      return StateView.loading(message: context.s.journalsLoading);
+    }
     if (vm.errorMessage.isNotEmpty) {
       return StateView.error(vm.errorMessage,
+          title: context.s.somethingWentWrong,
+          retryLabel: context.s.tryAgain,
           onRetry: () => vm.search(vm.currentTopic));
     }
     if (vm.journals.isEmpty) {
+      // After a search that returned nothing, show the "no results" state.
+      if (vm.currentTopic.isNotEmpty) {
+        return StateView.empty(
+          icon: Icons.search_off_rounded,
+          title: context.s.noResultsTitle,
+          message: context.s.noResultsMessage(vm.currentTopic),
+        );
+      }
       return StateView.empty(
         icon: Icons.menu_book_rounded,
-        title: 'Chưa có dữ liệu tạp chí',
-        message: 'Tìm một chủ đề để xem các tạp chí hàng đầu.',
+        title: context.s.journalsEmptyTitle,
+        message: context.s.journalsEmptyMessage,
       );
     }
 
@@ -84,15 +121,15 @@ class _JournalsScreenState extends State<JournalsScreen> {
         Row(
           children: [
             Expanded(
-                child: _stat('Tạp chí', '${journals.length}',
+                child: _stat(context.s.statJournals, '${journals.length}',
                     Icons.menu_book_rounded, AppColors.indigo)),
             const SizedBox(width: 12),
             Expanded(
-                child: _stat('Công bố', '$totalPubs',
+                child: _stat(context.s.statPublications, '$totalPubs',
                     Icons.description_rounded, AppColors.primary)),
             const SizedBox(width: 12),
             Expanded(
-                child: _stat('Trích dẫn', '$totalCites',
+                child: _stat(context.s.statCitations, '$totalCites',
                     Icons.format_quote_rounded, AppColors.amber)),
           ],
         ),
@@ -102,8 +139,8 @@ class _JournalsScreenState extends State<JournalsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SectionTitle(
-                  title: 'Đóng góp theo tạp chí',
+              SectionTitle(
+                  title: context.s.journalsContribution,
                   icon: Icons.bar_chart_rounded),
               const SizedBox(height: 16),
               ...journals.take(5).map((j) => _bar(j, vm.maxCount)),
@@ -111,8 +148,8 @@ class _JournalsScreenState extends State<JournalsScreen> {
           ),
         ),
         const SizedBox(height: 20),
-        const Text('Xếp hạng tạp chí',
-            style: TextStyle(
+        Text(context.s.journalsRanking,
+            style: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.ink)),
         const SizedBox(height: 12),
         SectionCard(
@@ -130,8 +167,9 @@ class _JournalsScreenState extends State<JournalsScreen> {
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                             fontWeight: FontWeight.w600, fontSize: 14)),
-                    subtitle: Text(
-                        '${j.publicationCount} công bố · TB ${j.averageCitations.toStringAsFixed(1)} trích dẫn'),
+                    subtitle: Text(context.s.journalRankSubtitle(
+                        j.publicationCount,
+                        j.averageCitations.toStringAsFixed(1))),
                     trailing: const Icon(Icons.chevron_right_rounded,
                         color: AppColors.faint),
                     onTap: () => Navigator.push(

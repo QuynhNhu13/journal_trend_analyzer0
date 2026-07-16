@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../firebase/messaging_service.dart';
 import '../l10n/locale_provider.dart';
 import '../theme/app_theme.dart';
 import '../viewmodels/auth_view_model.dart';
@@ -27,6 +28,33 @@ class _MainShellState extends State<MainShell> {
   int _index = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
+  /// Notification Center lives on the Profile tab.
+  static const int _profileTabIndex = 3;
+
+  @override
+  void initState() {
+    super.initState();
+    // A tapped FCM notification asks us to open the Notification Center.
+    MessagingService.instance.addListener(_handleMessagingSignal);
+    // Also handle a request that arrived before this widget mounted (e.g. the
+    // app was launched from a killed state by tapping a notification).
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _handleMessagingSignal());
+  }
+
+  @override
+  void dispose() {
+    MessagingService.instance.removeListener(_handleMessagingSignal);
+    super.dispose();
+  }
+
+  void _handleMessagingSignal() {
+    if (MessagingService.instance.takeOpenNotificationCenterRequest() &&
+        mounted) {
+      setState(() => _index = _profileTabIndex);
+    }
+  }
+
   void _openDrawer() => _scaffoldKey.currentState?.openDrawer();
 
   @override
@@ -35,7 +63,7 @@ class _MainShellState extends State<MainShell> {
       DashboardScreen(scaffoldKey: _scaffoldKey),
       JournalsScreen(onMenuTap: _openDrawer),
       KeywordsScreen(onMenuTap: _openDrawer),
-      const ProfileScreen(),
+      ProfileScreen(onMenuTap: _openDrawer),
     ];
 
     return Scaffold(
@@ -63,15 +91,17 @@ class _MainShellState extends State<MainShell> {
       child: BottomNavigationBar(
         currentIndex: _index,
         onTap: (i) => setState(() => _index = i),
-        items: const [
+        items: [
           BottomNavigationBarItem(
-              icon: Icon(Icons.home_rounded), label: 'Home'),
+              icon: const Icon(Icons.home_rounded), label: context.s.tabHome),
           BottomNavigationBarItem(
-              icon: Icon(Icons.menu_book_rounded), label: 'Journals'),
+              icon: const Icon(Icons.menu_book_rounded),
+              label: context.s.tabJournals),
           BottomNavigationBarItem(
-              icon: Icon(Icons.tag_rounded), label: 'Keywords'),
+              icon: const Icon(Icons.tag_rounded), label: context.s.tabKeywords),
           BottomNavigationBarItem(
-              icon: Icon(Icons.person_rounded), label: 'Profile'),
+              icon: const Icon(Icons.person_rounded),
+              label: context.s.tabProfile),
         ],
       ),
     );
@@ -149,7 +179,7 @@ class _MainShellState extends State<MainShell> {
             ),
             trailing: const LanguageToggle(onDark: false),
           ),
-          _tile(Icons.logout_rounded, 'Đăng xuất', () {
+          _tile(Icons.logout_rounded, context.s.signOut, () {
             Navigator.pop(context);
             context.read<AuthViewModel>().signOut();
           }),

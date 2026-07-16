@@ -298,4 +298,160 @@ class AppStrings {
   String get sectionAbstract => _t('Abstract', 'Tóm tắt');
   String get showLess => _t('Show less', 'Thu gọn');
   String plusMore(int n) => _t('+$n more', '+$n khác');
+
+  // ─── Bottom navigation tabs ──────────────────────────────
+  String get tabHome => _t('Home', 'Trang chủ');
+  String get tabJournals => _t('Journals', 'Tạp chí');
+  String get tabKeywords => _t('Keywords', 'Từ khóa');
+  String get tabProfile => _t('Profile', 'Hồ sơ');
+
+  // ─── Drawer / shared actions ─────────────────────────────
+  String get signOut => _t('Sign out', 'Đăng xuất');
+  String get viewAll => _t('View All', 'Xem tất cả');
+  String get open => _t('Open', 'Mở');
+  String get copy => _t('Copy', 'Sao chép');
+  String get refresh => _t('Refresh', 'Làm mới');
+
+  // ─── No-results empty state (0 papers) ───────────────────
+  String get noResultsTitle =>
+      _t('No publications found', 'Không tìm thấy công bố');
+  String noResultsMessage(String keyword) => _t(
+      "No publications found for '$keyword'. Try a different keyword.",
+      "Không tìm thấy công bố nào cho '$keyword'. Hãy thử từ khóa khác.");
+
+  // ─── Shared research-topic search (Home / Journals / Keywords) ──
+  /// Unified placeholder so the three synced search bars don't read like
+  /// per-screen filters.
+  String get searchTopicHint =>
+      _t('Search research topic...', 'Tìm chủ đề nghiên cứu...');
+  String currentTopicLabel(String topic) =>
+      _t('Topic: $topic', 'Chủ đề: $topic');
+  String get clearTopicTooltip => _t('Clear topic', 'Xóa chủ đề');
+
+  // ─── Search hints per screen ─────────────────────────────
+  String get dashboardSearchHint =>
+      _t('Search topic for dashboard insights', 'Tìm chủ đề để xem tổng quan');
+  String get papersRetrievedLabel =>
+      _t('Papers Retrieved:', 'Số bài báo lấy về:');
+  String get trendSearchHint => _t(
+      'Search topic for trend analysis', 'Tìm chủ đề để phân tích xu hướng');
+  String get topJournalsSearchHint => _t(
+      'Search topic for top journals', 'Tìm chủ đề để xem tạp chí hàng đầu');
+  String get topAuthorsSearchHint => _t(
+      'Search topic for top authors', 'Tìm chủ đề để xem tác giả hàng đầu');
+
+  // ─── Journals tab ────────────────────────────────────────
+  String get journalsTabTitle => _t('Journals', 'Tạp chí');
+  String get journalsTabSubtitle =>
+      _t('Journal-level analysis', 'Phân tích theo tạp chí');
+  String get journalsSearchHint => _t(
+      'Search a topic to analyze journals', 'Nhập chủ đề để phân tích tạp chí');
+  String get journalsLoading => _t('Loading journals…', 'Đang tải tạp chí…');
+  String get journalsEmptyTitle =>
+      _t('No journal data', 'Chưa có dữ liệu tạp chí');
+  String get journalsEmptyMessage => _t(
+      'Search a topic to see the top journals.',
+      'Tìm một chủ đề để xem các tạp chí hàng đầu.');
+  String get journalsContribution =>
+      _t('Contribution by journal', 'Đóng góp theo tạp chí');
+  String get journalsRanking => _t('Journal ranking', 'Xếp hạng tạp chí');
+
+  // Shared stat labels (journals + journal detail)
+  String get statJournals => _t('Journals', 'Tạp chí');
+  String get statPublications => _t('Publications', 'Công bố');
+  String get statCitations => _t('Citations', 'Trích dẫn');
+  String get statTotalCitations => _t('Total citations', 'Tổng trích dẫn');
+  String get statAvgCitationsPerPub =>
+      _t('Avg. citations / publication', 'Trung bình trích dẫn / công bố');
+  String journalRankSubtitle(int count, String avg) => _t(
+      '$count publications · avg $avg citations',
+      '$count công bố · TB $avg trích dẫn');
+
+  // ─── Journal detail ──────────────────────────────────────
+  String get journalDetailSubtitle => _t('Journal details', 'Chi tiết tạp chí');
+  String get relatedPublications =>
+      _t('Related publications', 'Công bố liên quan');
+
+  // ─── Keywords tab ────────────────────────────────────────
+  String get keywordsTabTitle => _t('Keywords', 'Từ khóa');
+  String get keywordsTabSubtitle => _t('Keyword analysis', 'Phân tích từ khóa');
+  String get keywordsSearchHint => _t(
+      'Search a topic to analyze keywords', 'Nhập chủ đề để phân tích từ khóa');
+  String get keywordsLoading => _t('Loading keywords…', 'Đang tải từ khóa…');
+  String get keywordsEmptyTitle =>
+      _t('No keyword data', 'Chưa có dữ liệu từ khóa');
+  String get keywordsEmptyMessage => _t(
+      'Search a topic to see popular keywords.',
+      'Tìm một chủ đề để xem các từ khóa phổ biến.');
+  String get keywordsTrending => _t('Trending keywords', 'Từ khóa nổi bật');
+  String get keywordsFrequency => _t('Keyword frequency', 'Tần suất từ khóa');
+
+  // ─── Keyword detail ──────────────────────────────────────
+  String get keywordDetailSubtitle =>
+      _t('Keyword analysis', 'Phân tích từ khóa');
+  String get analyzing => _t('Analyzing…', 'Đang phân tích…');
+  String get keywordTrendTitle => _t('Publication trend', 'Xu hướng công bố');
+  String get noTrendShort => _t('No trend data', 'Không có dữ liệu xu hướng');
+  String get topContributingAuthors =>
+      _t('Top contributing authors', 'Tác giả đóng góp hàng đầu');
+  String get relatedJournals => _t('Related journals', 'Tạp chí liên quan');
+
+  // ─── Profile screen ──────────────────────────────────────
+  String get profileTitle => _t('Profile', 'Hồ sơ');
+  String get profileSubtitle =>
+      _t('Account & Firebase services', 'Tài khoản & dịch vụ Firebase');
+  String get profileDemoName => _t('Demo mode', 'Chế độ demo');
+  String get profileGuestName => _t('Guest', 'Khách');
+  String get profileNotSignedIn => _t('Not signed in', 'Chưa đăng nhập');
+  String get notificationCenterTitle =>
+      _t('Notification Center', 'Trung tâm thông báo');
+  String get noNotifications =>
+      _t('No FCM notifications yet.', 'Chưa có thông báo nào từ FCM.');
+  String get exportPdfTitle => _t('Export PDF report', 'Xuất báo cáo PDF');
+  String get exportPdfHint => _t(
+      'Search a topic on the Home tab first, then come back to export a report.',
+      'Hãy tìm một chủ đề ở tab Home trước, rồi quay lại để xuất báo cáo.');
+  String exportTopicLabel(String topic) => _t('Topic: $topic', 'Chủ đề: $topic');
+  String get exportInProgress =>
+      _t('Creating & uploading…', 'Đang tạo & tải lên…');
+  String get exportButton =>
+      _t('Export PDF & upload to Storage', 'Xuất PDF & tải lên Storage');
+  String get uploadedToStorage =>
+      _t('Uploaded to Firebase Storage', 'Đã tải lên Firebase Storage');
+  String get urlCopied => _t('URL copied', 'Đã sao chép URL');
+  // Firebase product names — intentionally kept identical in both languages.
+  String get remoteConfigTitle => 'Remote Config';
+  String get crashlyticsDemoTitle => 'Crashlytics Demo';
+  // Friendly labels for the Remote Config keys (the real keys are unchanged).
+  String get rcMaxJournalsLabel =>
+      _t('Max journals displayed', 'Số tạp chí hiển thị tối đa');
+  String get rcMaxKeywordsLabel =>
+      _t('Max keywords displayed', 'Số từ khóa hiển thị tối đa');
+  String get remoteConfigCaption => _t(
+      'Values controlled remotely via Firebase Remote Config',
+      'Giá trị được điều khiển từ xa qua Firebase Remote Config');
+  String get handledExceptionButton =>
+      _t('Handled exception', 'Ngoại lệ đã xử lý');
+  String get testCrashButton => _t('Test crash', 'Thử gây crash');
+  String get handledExceptionSent =>
+      _t('Handled exception sent', 'Đã gửi ngoại lệ đã xử lý');
+  String get crashlyticsHint => _t(
+      'Test crash will close the app; the report appears in Firebase Console after a few minutes.',
+      'Test crash sẽ đóng app; báo cáo xuất hiện trong Firebase Console sau ít phút.');
+  String get linkOpenFailed =>
+      _t('Could not open the link', 'Không mở được liên kết');
+  String linkOpenFailedDetail(String error) =>
+      _t('Could not open the link: $error', 'Không mở được liên kết: $error');
+
+  // ─── Login screen ────────────────────────────────────────
+  String get loginSubtitle => _t(
+      'Analyze scientific research trends\nwith OpenAlex data',
+      'Phân tích xu hướng nghiên cứu khoa học\nvới dữ liệu OpenAlex');
+  String get signInWithGoogle => _t('Sign in with Google', 'Đăng nhập với Google');
+  String get tryDemoMode => _t('Try demo mode →', 'Xem thử ở chế độ demo →');
+  String get firebaseNotConfigured => _t(
+      'Firebase is not configured. See FIREBASE_SETUP.md to enable sign-in.',
+      'Firebase chưa được cấu hình. Xem FIREBASE_SETUP.md để bật đăng nhập.');
+  String get poweredBy =>
+      _t('Powered by Firebase & OpenAlex', 'Được hỗ trợ bởi Firebase & OpenAlex');
 }

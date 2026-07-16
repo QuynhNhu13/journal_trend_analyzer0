@@ -47,7 +47,7 @@ class _TopJournalScreenState extends State<TopJournalScreen> {
                 : context.s.topJournalsSubtitleDefault,
             icon: Icons.menu_book_rounded,
             child: TopicSearchBar(
-              hintText: 'Search topic for top journals',
+              hintText: context.s.topJournalsSearchHint,
               initialValue: _currentSearchText,
               onSearch: _onSearch,
             ),
