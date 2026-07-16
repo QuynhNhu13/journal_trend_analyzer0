@@ -13,4 +13,12 @@ class TopicProvider extends ChangeNotifier {
     _topic = cleaned;
     notifyListeners();
   }
+
+  /// Clears the current topic, returning the shared tabs to their initial
+  /// (pre-search) state.
+  void clear() {
+    if (_topic.isEmpty) return;
+    _topic = '';
+    notifyListeners();
+  }
 }

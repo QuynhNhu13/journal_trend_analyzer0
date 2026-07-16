@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../l10n/locale_provider.dart';
 import '../theme/app_theme.dart';
 import '../viewmodels/auth_view_model.dart';
 
@@ -45,10 +46,11 @@ class LoginScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  'Phân tích xu hướng nghiên cứu khoa học\nvới dữ liệu OpenAlex',
+                Text(
+                  context.s.loginSubtitle,
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white70, fontSize: 14, height: 1.5),
+                  style: const TextStyle(
+                      color: Colors.white70, fontSize: 14, height: 1.5),
                 ),
                 const Spacer(flex: 3),
                 _GoogleButton(auth: auth),
@@ -58,16 +60,17 @@ class LoginScreen extends StatelessWidget {
                   const SizedBox(height: 8),
                   TextButton(
                     onPressed: () => context.read<AuthViewModel>().enterDemo(),
-                    child: const Text(
-                      'Xem thử ở chế độ demo →',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                    child: Text(
+                      context.s.tryDemoMode,
+                      style: const TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.w700),
                     ),
                   ),
                 ],
                 const Spacer(flex: 1),
-                const Text(
-                  'Powered by Firebase & OpenAlex',
-                  style: TextStyle(color: Colors.white60, fontSize: 12),
+                Text(
+                  context.s.poweredBy,
+                  style: const TextStyle(color: Colors.white60, fontSize: 12),
                 ),
                 const SizedBox(height: 20),
               ],
@@ -137,9 +140,10 @@ class _GoogleButton extends StatelessWidget {
                         const Icon(Icons.login, color: AppColors.primary),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
-                    'Đăng nhập với Google',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                  Text(
+                    context.s.signInWithGoogle,
+                    style: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.w700),
                   ),
                 ],
               ),
@@ -157,14 +161,14 @@ class _FirebaseWarning extends StatelessWidget {
         color: Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.warning_amber_rounded, color: Colors.white, size: 20),
-          SizedBox(width: 10),
+          const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 20),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Firebase chưa được cấu hình. Xem FIREBASE_SETUP.md để bật đăng nhập.',
-              style: TextStyle(color: Colors.white, fontSize: 12.5),
+              context.s.firebaseNotConfigured,
+              style: const TextStyle(color: Colors.white, fontSize: 12.5),
             ),
           ),
         ],

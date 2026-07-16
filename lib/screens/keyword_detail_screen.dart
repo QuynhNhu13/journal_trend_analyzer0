@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../firebase/analytics_service.dart';
+import '../l10n/locale_provider.dart';
 import '../models/author.dart';
 import '../theme/app_theme.dart';
 import '../viewmodels/keyword_detail_view_model.dart';
@@ -44,7 +45,7 @@ class _KeywordDetailScreenState extends State<KeywordDetailScreen> {
         children: [
           BrandedHeader(
             title: widget.keyword,
-            subtitle: 'Phân tích từ khóa',
+            subtitle: context.s.keywordDetailSubtitle,
             icon: Icons.tag_rounded,
           ),
           Expanded(
@@ -52,10 +53,12 @@ class _KeywordDetailScreenState extends State<KeywordDetailScreen> {
               listenable: _vm,
               builder: (context, _) {
                 if (_vm.isLoading) {
-                  return StateView.loading(message: 'Đang phân tích…');
+                  return StateView.loading(message: context.s.analyzing);
                 }
                 if (_vm.errorMessage.isNotEmpty) {
                   return StateView.error(_vm.errorMessage,
+                      title: context.s.somethingWentWrong,
+                      retryLabel: context.s.tryAgain,
                       onRetry: () => _vm.load(widget.keyword));
                 }
                 return ListView(
@@ -84,19 +87,25 @@ class _KeywordDetailScreenState extends State<KeywordDetailScreen> {
     if (data.isEmpty) {
       return SectionCard(
         child: Center(
-            child: Text('Không có dữ liệu xu hướng',
+            child: Text(context.s.noTrendShort,
                 style: const TextStyle(color: AppColors.muted))),
       );
     }
     final spots =
         data.map((t) => FlSpot(t.year.toDouble(), t.count.toDouble())).toList();
     final maxCount = data.map((t) => t.count).reduce(max);
+    // Guard a single-year trend: a zero-width X axis makes fl_chart throw.
+    final double minX = data.first.year.toDouble();
+    final double maxX = data.first.year == data.last.year
+        ? data.first.year + 1.0
+        : data.last.year.toDouble();
     return SectionCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SectionTitle(
-              title: 'Xu hướng công bố', icon: Icons.show_chart_rounded),
+          SectionTitle(
+              title: context.s.keywordTrendTitle,
+              icon: Icons.show_chart_rounded),
           const SizedBox(height: 20),
           SizedBox(
             height: 170,
@@ -135,6 +144,10 @@ class _KeywordDetailScreenState extends State<KeywordDetailScreen> {
                   ),
                 ),
                 borderData: FlBorderData(show: false),
+                minX: minX,
+                maxX: maxX,
+                minY: 0,
+                maxY: (maxCount <= 0 ? 1 : maxCount) * 1.2,
                 lineBarsData: [
                   LineChartBarData(
                     spots: spots,
@@ -166,8 +179,8 @@ class _KeywordDetailScreenState extends State<KeywordDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SectionTitle(
-              title: 'Tác giả đóng góp hàng đầu',
+          SectionTitle(
+              title: context.s.topContributingAuthors,
               icon: Icons.people_alt_rounded),
           const SizedBox(height: 8),
           ...authors.asMap().entries.map((e) {
@@ -244,8 +257,9 @@ class _KeywordDetailScreenState extends State<KeywordDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SectionTitle(
-              title: 'Tạp chí liên quan', icon: Icons.menu_book_rounded),
+          SectionTitle(
+              title: context.s.relatedJournals,
+              icon: Icons.menu_book_rounded),
           const SizedBox(height: 12),
           ..._vm.journals.map((j) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),
@@ -276,8 +290,8 @@ class _KeywordDetailScreenState extends State<KeywordDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Công bố liên quan',
-            style: TextStyle(
+        Text(context.s.relatedPublications,
+            style: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.ink)),
         const SizedBox(height: 12),
         ..._vm.publications.map((p) => Padding(

@@ -49,7 +49,7 @@ class _TopAuthorScreenState extends State<TopAuthorScreen> {
                 : context.s.topAuthorsSubtitleDefault,
             icon: Icons.people_alt_rounded,
             child: TopicSearchBar(
-              hintText: 'Search topic for top authors',
+              hintText: context.s.topAuthorsSearchHint,
               initialValue: _currentSearchText,
               onSearch: _onSearch,
             ),
@@ -108,7 +108,11 @@ class _TopAuthorScreenState extends State<TopAuthorScreen> {
     }
 
     String initials = "";
-    final parts = author.name.trim().split(" ");
+    final parts = author.name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
     if (parts.isNotEmpty) {
       initials = parts.first[0].toUpperCase();
       if (parts.length > 1) {

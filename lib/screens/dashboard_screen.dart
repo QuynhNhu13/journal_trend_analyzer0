@@ -13,7 +13,9 @@ import '../providers/top_author_provider.dart';
 import '../models/dashboard_summary.dart';
 import '../theme/app_theme.dart';
 import '../viewmodels/topic_provider.dart';
+import '../viewmodels/topic_reset.dart';
 import '../widgets/common.dart';
+import '../widgets/current_topic_chip.dart';
 import '../widgets/topic_search_bar.dart';
 import 'detail_screen.dart';
 import 'top_journal_screen.dart';
@@ -54,6 +56,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _onSearch(topic);
   }
 
+  void _clearTopic() {
+    clearGlobalTopic(context);
+    setState(() => _currentSearchText = "");
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<DashboardProvider>(context);
@@ -69,6 +76,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // ─── Header with search ─────────────────────────────────
 
   Widget _buildHeader(DashboardProvider provider) {
+    // The shared research topic drives the search bar text on all three tabs.
+    final topic = context.watch<TopicProvider>().topic;
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
@@ -129,10 +138,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 22),
               TopicSearchBar(
-                hintText: 'Search topic for dashboard insights',
-                initialValue: _currentSearchText,
+                hintText: context.s.searchTopicHint,
+                initialValue: topic,
                 onSearch: _onSearch,
               ),
+              if (topic.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                CurrentTopicChip(topic: topic, onClear: _clearTopic),
+              ],
               _buildPapersRetrieved(provider),
               const SizedBox(height: 16),
               _buildTopicChips(),
@@ -199,9 +212,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           const Icon(Icons.description_outlined, color: Colors.white70, size: 16),
           const SizedBox(width: 8),
-          const Text(
-            "Papers Retrieved:",
-            style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600),
+          Text(
+            context.s.papersRetrievedLabel,
+            style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600),
           ),
           const SizedBox(width: 8),
           Text(
@@ -246,6 +259,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         icon: Icons.insights_rounded,
         title: context.s.noDashboardTitle,
         message: context.s.noDashboardMessage,
+      );
+    }
+
+    // A completed search that returned no publications: show a friendly
+    // empty state instead of a grid full of 0 / N/A values.
+    if (summary.totalPublications == 0 && summary.papersRetrieved == 0) {
+      return StateView.empty(
+        icon: Icons.search_off_rounded,
+        title: context.s.noResultsTitle,
+        message: context.s.noResultsMessage(provider.currentTopic),
       );
     }
 
@@ -345,13 +368,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionTitle("Top Authors", null),
+          _sectionTitle(context.s.topAuthorsTitle, null),
           const SizedBox(height: 12),
           _buildSkeletonCard(80),
         ],
       );
     }
-    
+
     if (provider.authors.isEmpty) return const SizedBox.shrink();
 
     final items = provider.authors.take(5).toList();
@@ -359,7 +382,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle("Top Authors", () {
+        _sectionTitle(context.s.topAuthorsTitle, () {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const TopAuthorScreen()),
@@ -374,7 +397,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               final author = entry.value;
               
               String initials = "";
-              final parts = author.name.trim().split(" ");
+              final parts = author.name
+                  .trim()
+                  .split(RegExp(r'\s+'))
+                  .where((p) => p.isNotEmpty)
+                  .toList();
               if (parts.isNotEmpty) {
                 initials = parts.first[0].toUpperCase();
                 if (parts.length > 1) {
@@ -445,9 +472,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            child: const Text(
-              "View All",
-              style: TextStyle(
+            child: Text(
+              context.s.viewAll,
+              style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
                 color: AppColors.primary,
@@ -600,6 +627,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final lastYear = trendData.last.year;
     final maxCount = trendData.map((t) => t.count).reduce(max);
     final interval = max(1.0, ((lastYear - firstYear) / 4).floorToDouble());
+    // Guard degenerate ranges (a single year, or all-zero counts): a zero-width
+    // axis makes fl_chart divide by zero and throw a null-check internally.
+    final double minX = firstYear.toDouble();
+    final double maxX =
+        firstYear == lastYear ? firstYear + 1.0 : lastYear.toDouble();
+    final double maxY = (maxCount <= 0 ? 1 : maxCount) * 1.2;
 
     return SectionCard(
       child: Column(
@@ -661,10 +694,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
                 borderData: FlBorderData(show: false),
-                minX: firstYear.toDouble(),
-                maxX: lastYear.toDouble(),
+                minX: minX,
+                maxX: maxX,
                 minY: 0,
-                maxY: maxCount.toDouble() * 1.2,
+                maxY: maxY,
                 lineBarsData: [
                   LineChartBarData(
                     spots: spots,

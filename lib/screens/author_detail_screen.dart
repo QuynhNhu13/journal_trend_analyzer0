@@ -51,7 +51,11 @@ class _AuthorDetailScreenState extends State<AuthorDetailScreen> {
 
   Widget _buildHeader(AuthorDetailProvider provider) {
     String initials = "";
-    final parts = widget.authorName.trim().split(" ");
+    final parts = widget.authorName
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
     if (parts.isNotEmpty) {
       initials = parts.first[0].toUpperCase();
       if (parts.length > 1) {

@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../firebase/crashlytics_service.dart';
 import '../firebase/messaging_service.dart';
 import '../firebase/remote_config_service.dart';
+import '../l10n/locale_provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../theme/app_theme.dart';
 import '../viewmodels/auth_view_model.dart';
@@ -15,7 +16,10 @@ import '../widgets/common.dart';
 /// Profile screen (lab §4.8): user info, Notification Center, Report Export,
 /// Remote Config demo and Crashlytics demo.
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  /// Opens the shared app drawer from the header's hamburger button, matching
+  /// the Home/Journals/Keywords tabs.
+  final VoidCallback? onMenuTap;
+  const ProfileScreen({super.key, this.onMenuTap});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -26,10 +30,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const BrandedHeader(
-          title: 'Profile',
-          subtitle: 'Tài khoản & dịch vụ Firebase',
-          icon: Icons.person_rounded,
+        BrandedHeader(
+          title: context.s.profileTitle,
+          subtitle: context.s.profileSubtitle,
+          onMenuTap: widget.onMenuTap,
         ),
         Expanded(
           child: ListView(
@@ -57,8 +61,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _userCard() {
     final auth = context.watch<AuthViewModel>();
     final user = auth.user;
-    final name = user?.displayName ?? (auth.demoMode ? 'Chế độ demo' : 'Khách');
-    final email = user?.email ?? 'Chưa đăng nhập';
+    final name = user?.displayName ??
+        (auth.demoMode ? context.s.profileDemoName : context.s.profileGuestName);
+    final email = user?.email ?? context.s.profileNotSignedIn;
     final photo = user?.photoURL;
 
     return SectionCard(
@@ -117,24 +122,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: SectionTitle(
-                    title: 'Notification Center',
+                    title: context.s.notificationCenterTitle,
                     icon: Icons.notifications_rounded),
               ),
               TextButton(
                 onPressed: () =>
                     context.read<MessagingService>().addSample(),
-                child: const Text('Mẫu'),
+                child: Text(context.s.sampleButton),
               ),
             ],
           ),
           const SizedBox(height: 8),
           if (items.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              child: Text('Chưa có thông báo nào từ FCM.',
-                  style: TextStyle(color: AppColors.muted, fontSize: 13)),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(context.s.noNotifications,
+                  style: const TextStyle(color: AppColors.muted, fontSize: 13)),
             )
           else
             ...items.map((n) => Padding(
@@ -185,15 +190,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SectionTitle(
-              title: 'Xuất báo cáo PDF', icon: Icons.picture_as_pdf_rounded),
+          SectionTitle(
+              title: context.s.exportPdfTitle,
+              icon: Icons.picture_as_pdf_rounded),
           const SizedBox(height: 12),
           if (summary == null)
-            const Text(
-                'Hãy tìm một chủ đề ở tab Home trước, rồi quay lại để xuất báo cáo.',
-                style: TextStyle(color: AppColors.muted, fontSize: 13))
+            Text(context.s.exportPdfHint,
+                style: const TextStyle(color: AppColors.muted, fontSize: 13))
           else ...[
-            Text('Chủ đề: $topic',
+            Text(context.s.exportTopicLabel(topic),
                 style: const TextStyle(
                     fontSize: 13.5, fontWeight: FontWeight.w600)),
             const SizedBox(height: 12),
@@ -213,8 +218,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             strokeWidth: 2, color: Colors.white))
                     : const Icon(Icons.cloud_upload_rounded, size: 18),
                 label: Text(profile.exporting
-                    ? 'Đang tạo & tải lên…'
-                    : 'Xuất PDF & tải lên Storage'),
+                    ? context.s.exportInProgress
+                    : context.s.exportButton),
               ),
             ),
             if (profile.exportError != null) ...[
@@ -233,13 +238,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       children: [
-                        Icon(Icons.check_circle_rounded,
+                        const Icon(Icons.check_circle_rounded,
                             color: AppColors.emerald, size: 18),
-                        SizedBox(width: 8),
-                        Text('Đã tải lên Firebase Storage',
-                            style: TextStyle(
+                        const SizedBox(width: 8),
+                        Text(context.s.uploadedToStorage,
+                            style: const TextStyle(
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.emerald,
                                 fontSize: 13)),
@@ -255,18 +260,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         TextButton.icon(
                           onPressed: () => _openUrl(profile.reportUrl!),
                           icon: const Icon(Icons.open_in_new_rounded, size: 16),
-                          label: const Text('Mở'),
+                          label: Text(context.s.open),
                         ),
                         TextButton.icon(
                           onPressed: () {
                             Clipboard.setData(
                                 ClipboardData(text: profile.reportUrl!));
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Đã copy URL')),
+                              SnackBar(content: Text(context.s.urlCopied)),
                             );
                           },
                           icon: const Icon(Icons.copy_rounded, size: 16),
-                          label: const Text('Copy'),
+                          label: Text(context.s.copy),
                         ),
                       ],
                     ),
@@ -289,9 +294,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: SectionTitle(
-                    title: 'Remote Config', icon: Icons.tune_rounded),
+                    title: context.s.remoteConfigTitle,
+                    icon: Icons.tune_rounded),
               ),
               TextButton.icon(
                 onPressed: () async {
@@ -299,7 +305,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   if (mounted) setState(() {});
                 },
                 icon: const Icon(Icons.refresh_rounded, size: 16),
-                label: const Text('Làm mới'),
+                label: Text(context.s.refresh),
               ),
             ],
           ),
@@ -338,8 +344,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SectionTitle(
-              title: 'Crashlytics Demo', icon: Icons.bug_report_rounded),
+          SectionTitle(
+              title: context.s.crashlyticsDemoTitle,
+              icon: Icons.bug_report_rounded),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -349,12 +356,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     await CrashlyticsService.instance.logHandledException();
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Đã gửi handled exception')),
+                        SnackBar(
+                            content: Text(context.s.handledExceptionSent)),
                       );
                     }
                   },
-                  child: const Text('Handled exception'),
+                  child: Text(context.s.handledExceptionButton),
                 ),
               ),
               const SizedBox(width: 12),
@@ -363,15 +370,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.danger),
                   onPressed: () => CrashlyticsService.instance.forceCrash(),
-                  child: const Text('Test crash'),
+                  child: Text(context.s.testCrashButton),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          const Text(
-              'Test crash sẽ đóng app; báo cáo xuất hiện trong Firebase Console sau ít phút.',
-              style: TextStyle(fontSize: 11.5, color: AppColors.faint)),
+          Text(context.s.crashlyticsHint,
+              style: const TextStyle(fontSize: 11.5, color: AppColors.faint)),
         ],
       ),
     );
@@ -390,7 +396,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           side: const BorderSide(color: AppColors.danger, width: 1.4),
         ),
         icon: const Icon(Icons.logout_rounded, size: 18),
-        label: const Text('Đăng xuất'),
+        label: Text(context.s.signOut),
       ),
     );
   }
@@ -405,13 +411,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!launched && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Không mở được liên kết')),
+          SnackBar(content: Text(context.s.linkOpenFailed)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Không mở được liên kết: $e')),
+          SnackBar(content: Text(context.s.linkOpenFailedDetail('$e'))),
         );
       }
     }

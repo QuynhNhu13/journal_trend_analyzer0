@@ -35,7 +35,7 @@ class _MainShellState extends State<MainShell> {
       DashboardScreen(scaffoldKey: _scaffoldKey),
       JournalsScreen(onMenuTap: _openDrawer),
       KeywordsScreen(onMenuTap: _openDrawer),
-      const ProfileScreen(),
+      ProfileScreen(onMenuTap: _openDrawer),
     ];
 
     return Scaffold(
@@ -63,15 +63,17 @@ class _MainShellState extends State<MainShell> {
       child: BottomNavigationBar(
         currentIndex: _index,
         onTap: (i) => setState(() => _index = i),
-        items: const [
+        items: [
           BottomNavigationBarItem(
-              icon: Icon(Icons.home_rounded), label: 'Home'),
+              icon: const Icon(Icons.home_rounded), label: context.s.tabHome),
           BottomNavigationBarItem(
-              icon: Icon(Icons.menu_book_rounded), label: 'Journals'),
+              icon: const Icon(Icons.menu_book_rounded),
+              label: context.s.tabJournals),
           BottomNavigationBarItem(
-              icon: Icon(Icons.tag_rounded), label: 'Keywords'),
+              icon: const Icon(Icons.tag_rounded), label: context.s.tabKeywords),
           BottomNavigationBarItem(
-              icon: Icon(Icons.person_rounded), label: 'Profile'),
+              icon: const Icon(Icons.person_rounded),
+              label: context.s.tabProfile),
         ],
       ),
     );
@@ -149,7 +151,7 @@ class _MainShellState extends State<MainShell> {
             ),
             trailing: const LanguageToggle(onDark: false),
           ),
-          _tile(Icons.logout_rounded, 'Đăng xuất', () {
+          _tile(Icons.logout_rounded, context.s.signOut, () {
             Navigator.pop(context);
             context.read<AuthViewModel>().signOut();
           }),

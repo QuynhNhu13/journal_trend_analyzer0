@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../firebase/analytics_service.dart';
+import '../l10n/locale_provider.dart';
 import '../models/journal_stat.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
@@ -32,7 +33,7 @@ class _JournalDetailScreenState extends State<JournalDetailScreen> {
         children: [
           BrandedHeader(
             title: j.name,
-            subtitle: 'Chi tiết tạp chí',
+            subtitle: context.s.journalDetailSubtitle,
             icon: Icons.menu_book_rounded,
           ),
           Expanded(
@@ -42,21 +43,23 @@ class _JournalDetailScreenState extends State<JournalDetailScreen> {
                 Row(
                   children: [
                     Expanded(
-                        child: _stat('Công bố', '${j.publicationCount}',
+                        child: _stat(context.s.statPublications,
+                            '${j.publicationCount}',
                             Icons.description_rounded, AppColors.primary)),
                     const SizedBox(width: 12),
                     Expanded(
-                        child: _stat('Tổng trích dẫn', '${j.totalCitations}',
+                        child: _stat(context.s.statTotalCitations,
+                            '${j.totalCitations}',
                             Icons.format_quote_rounded, AppColors.amber)),
                   ],
                 ),
                 const SizedBox(height: 12),
-                _wideStat('Trung bình trích dẫn / công bố',
+                _wideStat(context.s.statAvgCitationsPerPub,
                     j.averageCitations.toStringAsFixed(2), Icons.star_rounded,
                     AppColors.emerald),
                 const SizedBox(height: 24),
-                const Text('Công bố liên quan',
-                    style: TextStyle(
+                Text(context.s.relatedPublications,
+                    style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
                         color: AppColors.ink)),

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../l10n/locale_provider.dart';
 import '../theme/app_theme.dart';
 import '../viewmodels/keywords_view_model.dart';
 import '../viewmodels/topic_provider.dart';
+import '../viewmodels/topic_reset.dart';
 import '../widgets/common.dart';
+import '../widgets/current_topic_chip.dart';
 import '../widgets/topic_search_bar.dart';
 import 'keyword_detail_screen.dart';
 
@@ -31,7 +34,11 @@ class _KeywordsScreenState extends State<KeywordsScreen> {
     final vm = context.watch<KeywordsViewModel>();
     final topic = context.watch<TopicProvider>().topic;
 
-    if (topic.isNotEmpty && topic != _lastLoaded && !vm.isLoading) {
+    // Keep the tab in sync with the shared topic: auto-load a newly set topic,
+    // and forget the last-loaded topic once it has been cleared.
+    if (topic.isEmpty) {
+      _lastLoaded = null;
+    } else if (topic != _lastLoaded && !vm.isLoading) {
       _lastLoaded = topic;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) context.read<KeywordsViewModel>().search(topic);
@@ -41,13 +48,23 @@ class _KeywordsScreenState extends State<KeywordsScreen> {
     return Column(
       children: [
         BrandedHeader(
-          title: 'Keywords',
-          subtitle: 'Phân tích từ khóa',
+          title: context.s.keywordsTabTitle,
+          subtitle: context.s.keywordsTabSubtitle,
           onMenuTap: widget.onMenuTap,
-          child: TopicSearchBar(
-            hintText: 'Nhập chủ đề để phân tích từ khóa',
-            initialValue: vm.currentTopic.isEmpty ? topic : vm.currentTopic,
-            onSearch: _search,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TopicSearchBar(
+                hintText: context.s.searchTopicHint,
+                initialValue: topic,
+                onSearch: _search,
+              ),
+              if (topic.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                CurrentTopicChip(
+                    topic: topic, onClear: () => clearGlobalTopic(context)),
+              ],
+            ],
           ),
         ),
         Expanded(child: _body(vm)),
@@ -56,16 +73,28 @@ class _KeywordsScreenState extends State<KeywordsScreen> {
   }
 
   Widget _body(KeywordsViewModel vm) {
-    if (vm.isLoading) return StateView.loading(message: 'Đang tải từ khóa…');
+    if (vm.isLoading) {
+      return StateView.loading(message: context.s.keywordsLoading);
+    }
     if (vm.errorMessage.isNotEmpty) {
       return StateView.error(vm.errorMessage,
+          title: context.s.somethingWentWrong,
+          retryLabel: context.s.tryAgain,
           onRetry: () => vm.search(vm.currentTopic));
     }
     if (vm.keywords.isEmpty) {
+      // After a search that returned nothing, show the "no results" state.
+      if (vm.currentTopic.isNotEmpty) {
+        return StateView.empty(
+          icon: Icons.search_off_rounded,
+          title: context.s.noResultsTitle,
+          message: context.s.noResultsMessage(vm.currentTopic),
+        );
+      }
       return StateView.empty(
         icon: Icons.tag_rounded,
-        title: 'Chưa có dữ liệu từ khóa',
-        message: 'Tìm một chủ đề để xem các từ khóa phổ biến.',
+        title: context.s.keywordsEmptyTitle,
+        message: context.s.keywordsEmptyMessage,
       );
     }
 
@@ -78,8 +107,8 @@ class _KeywordsScreenState extends State<KeywordsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SectionTitle(
-                  title: 'Từ khóa nổi bật',
+              SectionTitle(
+                  title: context.s.keywordsTrending,
                   icon: Icons.local_fire_department_rounded),
               const SizedBox(height: 14),
               Wrap(
@@ -102,8 +131,8 @@ class _KeywordsScreenState extends State<KeywordsScreen> {
           ),
         ),
         const SizedBox(height: 20),
-        const Text('Tần suất từ khóa',
-            style: TextStyle(
+        Text(context.s.keywordsFrequency,
+            style: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.ink)),
         const SizedBox(height: 12),
         SectionCard(
