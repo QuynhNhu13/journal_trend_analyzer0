@@ -100,7 +100,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                 initialValue: topic,
                 onSearch: _onSearch,
                 fieldKey: const ValueKey(WidgetKeys.searchFieldHome),
-                submitKey: const ValueKey(WidgetKeys.searchSubmit),
+                submitKey: const ValueKey(WidgetKeys.searchSubmitHome),
               ),
               if (topic.isNotEmpty) ...[
                 const SizedBox(height: 12),

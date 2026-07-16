@@ -6,11 +6,15 @@
 class WidgetKeys {
   WidgetKeys._();
 
-  // ── Search bars (Home / Journals / Keywords) + submit button ──
+  // ── Search bars (Home / Journals / Keywords) + submit buttons ──
+  // Distinct submit keys per screen: all three search bars are mounted at once
+  // inside the IndexedStack, so a shared key would be ambiguous for finders.
   static const String searchFieldHome = 'search_field_home';
   static const String searchFieldJournals = 'search_field_journals';
   static const String searchFieldKeywords = 'search_field_keywords';
-  static const String searchSubmit = 'search_submit';
+  static const String searchSubmitHome = 'search_submit_home';
+  static const String searchSubmitJournals = 'search_submit_journals';
+  static const String searchSubmitKeywords = 'search_submit_keywords';
 
   // ── Bottom navigation tabs ──
   static const String tabHome = 'tab_home';

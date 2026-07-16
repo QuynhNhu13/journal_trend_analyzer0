@@ -64,7 +64,7 @@ class _KeywordsScreenState extends State<KeywordsScreen>
                 initialValue: topic,
                 onSearch: _search,
                 fieldKey: const ValueKey(WidgetKeys.searchFieldKeywords),
-                submitKey: const ValueKey(WidgetKeys.searchSubmit),
+                submitKey: const ValueKey(WidgetKeys.searchSubmitKeywords),
               ),
               if (topic.isNotEmpty) ...[
                 const SizedBox(height: 12),

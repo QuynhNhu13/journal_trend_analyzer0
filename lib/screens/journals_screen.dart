@@ -65,7 +65,7 @@ class _JournalsScreenState extends State<JournalsScreen>
                 initialValue: topic,
                 onSearch: _search,
                 fieldKey: const ValueKey(WidgetKeys.searchFieldJournals),
-                submitKey: const ValueKey(WidgetKeys.searchSubmit),
+                submitKey: const ValueKey(WidgetKeys.searchSubmitJournals),
               ),
               if (topic.isNotEmpty) ...[
                 const SizedBox(height: 12),
