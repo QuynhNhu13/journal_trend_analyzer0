@@ -42,6 +42,12 @@ class WidgetKeys {
 
   // ── Per-screen verification anchors ──
   static const String dashboardTotalPapers = 'dashboard_total_papers';
+
+  /// "Details" button on the Home "Most Influential Paper" card — the entry
+  /// point from a search result into [DetailScreen]. Distinct from
+  /// [publicationListFirst], which lives on the Journal Detail screen: both
+  /// routes can be mounted at once, so they must not share a key.
+  static const String dashboardPaperDetails = 'dashboard_paper_details';
   static const String publicationDetailTitle = 'publication_detail_title';
   static const String journalDetailTitle = 'journal_detail_title';
   static const String keywordDetailTitle = 'keyword_detail_title';

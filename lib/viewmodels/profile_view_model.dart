@@ -18,6 +18,13 @@ class ProfileViewModel extends ChangeNotifier {
     required String topic,
     required ResearchDashboardSummary summary,
   }) async {
+    // Re-entrancy guard: one upload at a time, mirroring AuthViewModel's
+    // `_busy` guard. The Export button is already disabled while [exporting],
+    // but that only takes effect on the next rebuild — this keeps the "never
+    // two uploads in flight" invariant in the ViewModel, where it belongs,
+    // instead of relying on the UI to enforce it.
+    if (exporting) return;
+
     exporting = true;
     reportUrl = null;
     exportError = null;

@@ -798,6 +798,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             children: [
               Expanded(
                 child: OutlinedButton.icon(
+                  key: const ValueKey(WidgetKeys.dashboardPaperDetails),
                   onPressed: () => Navigator.push(context,
                       MaterialPageRoute(
                           builder: (_) => DetailScreen(publication: paper))),
