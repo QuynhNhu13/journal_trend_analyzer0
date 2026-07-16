@@ -69,6 +69,20 @@ class _DashboardScreenState extends State<DashboardScreen>
     // The shared research topic drives the search bar text on all three tabs.
     final topic = context.watch<TopicProvider>().topic;
 
+    // When the topic is changed from another tab (Journals/Keywords), run the
+    // dashboard's searches once so its data matches the shared topic. Searches
+    // started here already set _currentSearchText, so this never double-fires,
+    // and clearing (topic == "") is ignored.
+    if (topic.isNotEmpty && topic != _currentSearchText) {
+      _currentSearchText = topic;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        context.read<DashboardProvider>().search(topic);
+        context.read<TopJournalProvider>().search(topic);
+        context.read<TopAuthorProvider>().search(topic);
+      });
+    }
+
     return Column(
       children: [
         CollapsibleBrandedHeader(

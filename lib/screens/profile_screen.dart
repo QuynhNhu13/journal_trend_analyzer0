@@ -397,11 +397,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _openUrl(String url) async {
-    final uri = Uri.parse(url);
     // Treat launchUrl as the source of truth (avoids a check-then-act race with
     // canLaunchUrl) and surface any failure to the user instead of failing
-    // silently.
+    // silently. Uri.parse is inside the try so a malformed persisted URL uses
+    // the same failure handling.
     try {
+      final uri = Uri.parse(url);
       final launched =
           await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!launched && mounted) {

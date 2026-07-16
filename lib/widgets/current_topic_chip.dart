@@ -23,10 +23,10 @@ class CurrentTopicChip extends StatelessWidget {
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
-        padding: const EdgeInsets.only(left: 14, right: 6, top: 6, bottom: 6),
+        padding: const EdgeInsets.only(left: 14, right: 2),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.22),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(22),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -43,22 +43,21 @@ class CurrentTopicChip extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 6),
-            Material(
-              color: Colors.white.withValues(alpha: 0.25),
-              shape: const CircleBorder(),
-              child: InkWell(
-                customBorder: const CircleBorder(),
-                onTap: onClear,
-                child: Tooltip(
-                  message: context.s.clearTopicTooltip,
-                  child: const Padding(
-                    padding: EdgeInsets.all(3),
-                    child: Icon(Icons.close_rounded,
-                        color: Colors.white, size: 15),
-                  ),
-                ),
+            const SizedBox(width: 4),
+            // 44×44 hit target (accessibility) with the same small circular
+            // icon look.
+            IconButton(
+              onPressed: onClear,
+              tooltip: context.s.clearTopicTooltip,
+              iconSize: 15,
+              padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.white.withValues(alpha: 0.25),
+                shape: const CircleBorder(),
               ),
+              icon: const Icon(Icons.close_rounded, color: Colors.white),
             ),
           ],
         ),
