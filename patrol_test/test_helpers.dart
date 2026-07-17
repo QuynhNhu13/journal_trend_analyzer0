@@ -142,7 +142,71 @@ Future<void> searchTopic(PatrolIntegrationTester $, String topic) async {
   await $(const Key(WidgetKeys.tabHome)).tap();
   await $(const Key(WidgetKeys.searchFieldHome)).enterText(topic);
   await $(const Key(WidgetKeys.searchSubmitHome)).tap();
-  await $(const Key(WidgetKeys.dashboardTotalPapers)).waitUntilVisible(
-    timeout: networkTimeout,
+  // `dashboard_total_papers` chỉ render khi search thành công ⇒ mốc chờ, bọc
+  // retry để chịu được OpenAlex chập chờn. Vì mọi test đều đi qua searchTopic,
+  // một chỗ này bảo vệ luôn phần search Home của cả suite.
+  await waitForDataWithRetry($, $(const Key(WidgetKeys.dashboardTotalPapers)));
+}
+
+/// Chờ dữ liệu mạng về, chịu được OpenAlex chập chờn.
+///
+/// Chờ tới khi HOẶC [target] xuất hiện (thành công) HOẶC màn rơi vào error state
+/// (nút [WidgetKeys.retryButton] của [StateView.error] hiện ra). Nếu là error
+/// thì tap "Try again" rồi chờ lại, tối đa [maxRetries] lần.
+///
+///   (a) API ok ngay        → trả về ở vòng đầu.
+///   (b) API fail rồi ok     → tap retry, vòng sau thấy [target].
+///   (c) API fail hết lượt   → fail với message "API failed after N retries"
+///                             thay vì timeout mù.
+///
+/// Chỉ dùng cho widget SẼ hiển thị khi có dữ liệu (khối stats ở đầu list, KPI…),
+/// không dùng trực tiếp cho item cuối/khuất — với item khuất hãy chờ anchor ở
+/// đây rồi [scrollToInList]. Mỗi vòng chờ dùng [timeout] (mặc định networkTimeout).
+Future<void> waitForDataWithRetry(
+  PatrolIntegrationTester $,
+  PatrolFinder target, {
+  int maxRetries = 2,
+  Duration timeout = networkTimeout,
+}) async {
+  final retry = $(const Key(WidgetKeys.retryButton));
+  for (var attempt = 0;; attempt++) {
+    await _pumpUntilAny($, [target, retry], timeout: timeout);
+
+    if (target.exists) return; // (a) / (b): dữ liệu đã về.
+
+    if (retry.exists && attempt < maxRetries) {
+      await retry.tap(); // (b): OpenAlex fail ⇒ thử lại.
+      continue;
+    }
+
+    // (c): hết lượt retry mà vẫn error, hoặc treo không rõ trạng thái.
+    fail(
+      retry.exists
+          ? 'API failed after $maxRetries retries (target=$target).'
+          : 'waitForDataWithRetry: sau ${timeout.inSeconds}s không thấy dữ liệu '
+              'lẫn error state (target=$target).',
+    );
+  }
+}
+
+/// Cuộn [target] vào tầm nhìn TRONG đúng list chứa nó rồi mới thao tác/assert.
+///
+/// [anchorKeyInList] là key của một widget nằm sẵn trong list (vd khối stats ở
+/// đầu). Ta lấy Scrollable TỔ TIÊN của anchor đó làm view để cuộn.
+///
+/// Vì sao phải chỉ định view: mỗi màn có TopicSearchBar → TextField, và
+/// EditableText dựng một Scrollable nội bộ NẰM TRƯỚC ListView trong cây widget.
+/// `scrollTo()` mặc định lấy `find.byType(Scrollable).first` ⇒ vớ nhầm Scrollable
+/// của ô search, kéo mãi không lộ được item danh sách ⇒ "không tìm thấy widget"
+/// (đúng triệu chứng TC4). Khóa vào Scrollable của list thì hết mơ hồ.
+Future<void> scrollToInList(
+  PatrolIntegrationTester $,
+  PatrolFinder target, {
+  required String anchorKeyInList,
+}) async {
+  final listScrollable = find.ancestor(
+    of: find.byKey(ValueKey(anchorKeyInList)),
+    matching: find.byType(Scrollable),
   );
+  await target.scrollTo(view: listScrollable);
 }

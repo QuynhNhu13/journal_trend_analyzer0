@@ -425,10 +425,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 8),
           _configRow(context.s.rcMaxJournalsLabel, '${rc.maxJournals}',
-              rowKey: const ValueKey(WidgetKeys.remoteConfigJournalsValue)),
+              valueKey: const ValueKey(WidgetKeys.remoteConfigJournalsValue)),
           const Divider(height: 20),
           _configRow(context.s.rcMaxKeywordsLabel, '${rc.maxKeywords}',
-              rowKey: const ValueKey(WidgetKeys.remoteConfigKeywordsValue)),
+              valueKey: const ValueKey(WidgetKeys.remoteConfigKeywordsValue)),
           const SizedBox(height: 12),
           Text(context.s.remoteConfigCaption,
               style: const TextStyle(
@@ -440,14 +440,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _configRow(String key, String value, {Key? rowKey}) {
+  Widget _configRow(String label, String value, {Key? valueKey}) {
     return Row(
-      key: rowKey,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(key,
+        Text(label,
             style: const TextStyle(fontSize: 13, color: AppColors.body)),
+        // Key phải nằm TRÊN pill giá trị, KHÔNG phải trên Row.
+        //
+        // Row dùng spaceBetween ⇒ nhãn dạt trái, pill dạt phải, TÂM của Row là
+        // khoảng trống. patrol scrollTo/waitUntilVisible/.visible đều kiểm tra
+        // hit-testable tại TÂM (Alignment.center) ⇒ với Row rỗng ở giữa, widget
+        // "không bao giờ được nhận" nên cuộn mãi không dừng. Pill có Text ở giữa
+        // nên hit-testable tại tâm — và cũng chính là "giá trị" test cần verify.
         Container(
+          key: valueKey,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
             color: AppColors.primarySoft,

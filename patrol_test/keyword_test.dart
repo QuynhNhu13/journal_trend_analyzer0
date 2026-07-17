@@ -17,10 +17,12 @@ void main() {
 
     await $(const Key(WidgetKeys.tabKeywords)).tap();
 
-    // Chờ frequency bars có dữ liệu rồi mới tap bar đầu tiên.
-    await $(const Key(WidgetKeys.keywordListFirst)).waitUntilVisible(
-      timeout: networkTimeout,
-    );
+    // keywords_stats (card trending, đầu list) = mốc chờ dữ liệu, có retry.
+    await waitForDataWithRetry($, $(const Key(WidgetKeys.keywordsStats)));
+    // keyword_list_first (bar đầu) nằm dưới card trending ⇒ cuộn tới (đúng
+    // Scrollable của list) trước khi tap.
+    await scrollToInList($, $(const Key(WidgetKeys.keywordListFirst)),
+        anchorKeyInList: WidgetKeys.keywordsStats);
     await $(const Key(WidgetKeys.keywordListFirst)).tap();
 
     // KeywordDetailScreen: BrandedHeader mang key + tên keyword.
@@ -29,13 +31,12 @@ void main() {
     );
     expect($(const Key(WidgetKeys.keywordDetailTitle)).visible, true);
 
-    // Trend + danh sách liên quan: màn này chỉ dựng ListView nội dung SAU khi
-    // nạp xong (trước đó là StateView.loading), nên ListView xuất hiện là bằng
-    // chứng dữ liệu đã về. Phải giới hạn finder trong KeywordDetailScreen —
-    // 4 tab của IndexedStack vẫn còn trong tree nên $(ListView) trần sẽ mơ hồ.
-    await $(KeywordDetailScreen).$(ListView).waitUntilVisible(
-      timeout: networkTimeout,
-    );
+    // Trend + danh sách liên quan: màn này tự nạp mạng, chỉ dựng ListView nội
+    // dung SAU khi xong (trước đó là StateView.loading / có thể là error). Nên
+    // ListView xuất hiện là bằng chứng dữ liệu đã về ⇒ bọc retry. Giới hạn finder
+    // trong KeywordDetailScreen — 4 tab IndexedStack vẫn trong tree nên
+    // $(ListView) trần sẽ mơ hồ.
+    await waitForDataWithRetry($, $(KeywordDetailScreen).$(ListView));
     expect($(KeywordDetailScreen).$(ListView).visible, true);
   });
 }

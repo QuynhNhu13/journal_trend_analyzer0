@@ -26,6 +26,12 @@ class WidgetKeys {
   static const String googleSigninButton = 'google_signin_button';
   static const String signoutButton = 'signout_button';
 
+  /// "Try again" button of the shared error state ([StateView.error]). Shown on
+  /// any screen whose network request fails (dashboard, journals, keywords,
+  /// keyword detail). One shared key is enough: only the on-stage screen's
+  /// button is matched by finders (inactive IndexedStack tabs are offstage).
+  static const String retryButton = 'retry_button';
+
   // ── Profile · Remote Config ──
   static const String remoteConfigRefresh = 'remote_config_refresh';
   static const String remoteConfigJournalsValue = 'remote_config_journals_value';

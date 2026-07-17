@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../utils/widget_keys.dart';
 
 /// A branded gradient header placed at the top of a screen body (not an AppBar).
 ///
@@ -356,6 +357,7 @@ class StateView {
             if (onRetry != null) ...[
               const SizedBox(height: 24),
               ElevatedButton.icon(
+                key: const ValueKey(WidgetKeys.retryButton),
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh_rounded, size: 18),
                 label: Text(retryLabel),

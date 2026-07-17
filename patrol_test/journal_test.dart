@@ -16,10 +16,12 @@ void main() {
 
     await $(const Key(WidgetKeys.tabJournals)).tap();
 
-    // Chờ ranking list có dữ liệu rồi mới tap item đầu tiên.
-    await $(const Key(WidgetKeys.journalListFirst)).waitUntilVisible(
-      timeout: networkTimeout,
-    );
+    // journals_stats (đầu list) = mốc chờ request, có retry cho OpenAlex.
+    await waitForDataWithRetry($, $(const Key(WidgetKeys.journalsStats)));
+    // journal_list_first nằm dưới stats + biểu đồ ⇒ ngoài viewport trên máy nhỏ.
+    // Cuộn tới (đúng Scrollable của list) trước khi tap — tap không tự cuộn.
+    await scrollToInList($, $(const Key(WidgetKeys.journalListFirst)),
+        anchorKeyInList: WidgetKeys.journalsStats);
     await $(const Key(WidgetKeys.journalListFirst)).tap();
 
     // JournalDetailScreen: BrandedHeader mang key + tên journal.

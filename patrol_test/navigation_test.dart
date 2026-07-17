@@ -18,17 +18,18 @@ void main() {
 
     await $(const Key(WidgetKeys.tabJournals)).tap();
 
-    // Journals tab tự search lại theo topic đã set ở Home ⇒ chờ mạng.
-    // Cả 2 key chỉ tồn tại khi danh sách có dữ liệu.
-    await $(const Key(WidgetKeys.journalsStats)).waitUntilVisible(
-      timeout: networkTimeout,
-    );
-    await $(const Key(WidgetKeys.journalListFirst)).waitUntilVisible(
-      timeout: networkTimeout,
-    );
-
-    // Đề bài đòi cả "statistics" lẫn "list".
+    // Journals tab tự search lại theo topic đã set ở Home ⇒ chờ mạng, có retry.
+    // journals_stats nằm ĐẦU ListView nên hiện ngay khi dữ liệu về, đồng thời là
+    // mốc xác nhận request đã xong: stats và danh sách dùng CHUNG một nguồn
+    // (vm.journals), nên bọc retry ở đây bảo vệ luôn cả danh sách.
+    await waitForDataWithRetry($, $(const Key(WidgetKeys.journalsStats)));
     expect($(const Key(WidgetKeys.journalsStats)).visible, true);
+
+    // journal_list_first nằm DƯỚI stats + biểu đồ ⇒ ngoài viewport máy nhỏ: có
+    // trong tree nhưng chưa "visible". Cuộn tới (trong đúng Scrollable của list,
+    // xem scrollToInList) rồi mới khẳng định danh sách hiển thị.
+    await scrollToInList($, $(const Key(WidgetKeys.journalListFirst)),
+        anchorKeyInList: WidgetKeys.journalsStats);
     expect($(const Key(WidgetKeys.journalListFirst)).visible, true);
   });
 
@@ -41,14 +42,15 @@ void main() {
 
     await $(const Key(WidgetKeys.tabKeywords)).tap();
 
-    await $(const Key(WidgetKeys.keywordsStats)).waitUntilVisible(
-      timeout: networkTimeout,
-    );
-    await $(const Key(WidgetKeys.keywordListFirst)).waitUntilVisible(
-      timeout: networkTimeout,
-    );
-
+    // keywords_stats (card trending, đầu ListView) là mốc chờ dữ liệu, có retry;
+    // stats và danh sách tần suất dùng chung nguồn vm.keywords.
+    await waitForDataWithRetry($, $(const Key(WidgetKeys.keywordsStats)));
     expect($(const Key(WidgetKeys.keywordsStats)).visible, true);
+
+    // keyword_list_first nằm dưới card trending + tiêu đề "frequency" ⇒ cuộn tới
+    // trong đúng Scrollable của list.
+    await scrollToInList($, $(const Key(WidgetKeys.keywordListFirst)),
+        anchorKeyInList: WidgetKeys.keywordsStats);
     expect($(const Key(WidgetKeys.keywordListFirst)).visible, true);
   });
 
