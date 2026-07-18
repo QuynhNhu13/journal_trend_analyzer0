@@ -28,11 +28,25 @@ class ProfileViewModel extends ChangeNotifier {
   List<ExportedReport> _history = [];
   List<ExportedReport> get history => List.unmodifiable(_history);
 
-  /// Loads persisted history into memory. Call once at startup.
-  Future<void> loadHistory() async {
-    _history = await _historyStorage.load();
-    notifyListeners();
+  /// Serializes every history operation (load + mutations) so their async
+  /// storage access and in-memory `_history` updates can't interleave — e.g. a
+  /// concurrent [_addToHistory] must not be clobbered by [loadHistory] resolving
+  /// its `await` afterwards. Each op holds the chain from storage access through
+  /// the in-memory update and [notifyListeners].
+  Future<void> _historyOps = Future<void>.value();
+
+  Future<void> _serializeHistory(Future<void> Function() action) {
+    final run = _historyOps.then((_) => action());
+    // Keep the chain alive even if one op fails, so later ops still run.
+    _historyOps = run.catchError((_) {});
+    return run;
   }
+
+  /// Loads persisted history into memory. Call once at startup.
+  Future<void> loadHistory() => _serializeHistory(() async {
+        _history = await _historyStorage.load();
+        notifyListeners();
+      });
 
   Future<void> exportAndUpload({
     required String topic,
@@ -85,21 +99,22 @@ class ProfileViewModel extends ChangeNotifier {
   /// Records a successful export, newest first, capped at [maxHistory].
   /// Dropping the oldest entry only removes the local record — the file stays
   /// in Firebase Storage.
-  Future<void> _addToHistory(ExportedReport report) async {
-    _history.insert(0, report);
-    if (_history.length > maxHistory) {
-      _history = _history.sublist(0, maxHistory);
-    }
-    await _historyStorage.save(_history);
-  }
+  Future<void> _addToHistory(ExportedReport report) => _serializeHistory(() async {
+        _history.insert(0, report);
+        if (_history.length > maxHistory) {
+          _history = _history.sublist(0, maxHistory);
+        }
+        await _historyStorage.save(_history);
+      });
 
   /// Removes one entry from the local history only; the file in Storage is
   /// left untouched.
-  Future<void> removeFromHistory(ExportedReport report) async {
-    _history.removeWhere(
-      (r) => r.url == report.url && r.exportedAt == report.exportedAt,
-    );
-    notifyListeners();
-    await _historyStorage.save(_history);
-  }
+  Future<void> removeFromHistory(ExportedReport report) =>
+      _serializeHistory(() async {
+        _history.removeWhere(
+          (r) => r.url == report.url && r.exportedAt == report.exportedAt,
+        );
+        notifyListeners();
+        await _historyStorage.save(_history);
+      });
 }

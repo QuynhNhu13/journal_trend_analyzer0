@@ -16,9 +16,14 @@ class ReportHistoryStorageService {
       final raw = prefs.getString(_kReports);
       if (raw == null || raw.isEmpty) return [];
 
-      final decoded = jsonDecode(raw) as List;
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return [];
+      // Handle each persisted record independently: skip non-map or malformed
+      // entries (fromJson returns null for those) so one bad record can't throw
+      // and wipe the whole history — valid entries are always retained.
       return decoded
-          .map((e) => ExportedReport.fromJson(e as Map<String, dynamic>))
+          .whereType<Map<String, dynamic>>()
+          .map(ExportedReport.fromJson)
           .whereType<ExportedReport>()
           .toList();
     } catch (_) {

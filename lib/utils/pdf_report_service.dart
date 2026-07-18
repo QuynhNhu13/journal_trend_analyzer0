@@ -125,7 +125,8 @@ class PdfReportService {
           // Appendix
           if (appendixYears.isNotEmpty) ...[
             pw.SizedBox(height: 24),
-            pw.Text('Appendix — Publications per Year (last $_appendixYears)',
+            pw.Text(
+                'Appendix — Publications per Year (last ${appendixYears.length})',
                 style: pw.TextStyle(
                     fontSize: 12, fontWeight: pw.FontWeight.bold)),
             pw.SizedBox(height: 8),
