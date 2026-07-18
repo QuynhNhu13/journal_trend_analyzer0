@@ -415,8 +415,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
               TextButton.icon(
                 key: const ValueKey(WidgetKeys.remoteConfigRefresh),
                 onPressed: () async {
-                  await rc.refresh();
-                  if (mounted) setState(() {});
+                  final messenger = ScaffoldMessenger.of(context);
+                  final s = context.s;
+                  final result = await rc.refresh();
+                  if (!mounted) return;
+                  setState(() {}); // các dòng giá trị đọc lại rc.maxJournals/…
+                  final msg = switch (result) {
+                    RemoteConfigRefreshResult.activated => s.remoteConfigUpdated,
+                    RemoteConfigRefreshResult.noChange => s.remoteConfigNoChange,
+                    RemoteConfigRefreshResult.failed => s.remoteConfigFetchFailed,
+                  };
+                  messenger.showSnackBar(SnackBar(
+                    content: Text(msg),
+                    duration: const Duration(seconds: 2),
+                  ));
                 },
                 icon: const Icon(Icons.refresh_rounded, size: 16),
                 label: Text(context.s.refresh),

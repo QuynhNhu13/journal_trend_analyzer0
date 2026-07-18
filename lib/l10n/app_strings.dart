@@ -444,6 +444,13 @@ class AppStrings {
   String get remoteConfigCaption => _t(
       'Values controlled remotely via Firebase Remote Config',
       'Giá trị được điều khiển từ xa qua Firebase Remote Config');
+  // Phản hồi cho nút Refresh của Remote Config.
+  String get remoteConfigUpdated =>
+      _t('Config updated from server', 'Đã cập nhật config từ server');
+  String get remoteConfigNoChange =>
+      _t('Already up to date', 'Đã là mới nhất');
+  String get remoteConfigFetchFailed => _t(
+      'Fetch failed — check network', 'Fetch thất bại — kiểm tra mạng');
   String get handledExceptionButton =>
       _t('Handled exception', 'Ngoại lệ đã xử lý');
   String get testCrashButton => _t('Test crash', 'Thử gây crash');
