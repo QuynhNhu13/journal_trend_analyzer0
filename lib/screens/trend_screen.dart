@@ -58,7 +58,7 @@ class _TrendScreenState extends State<TrendScreen> {
                 ? () => widget.scaffoldKey?.currentState?.openDrawer()
                 : null,
             child: TopicSearchBar(
-              hintText: 'Search topic for trend analysis',
+              hintText: context.s.trendSearchHint,
               initialValue: _currentSearchText,
               onSearch: _onSearch,
             ),

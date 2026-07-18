@@ -19,6 +19,11 @@ class DashboardProvider extends ChangeNotifier {
   /// Stays 0 until a search completes.
   int papersRetrieved = 0;
 
+  /// Incremented on every search start and on [reset]. A response whose
+  /// generation no longer matches [_generation] is stale (superseded by a newer
+  /// search or invalidated by a reset) and must not mutate state.
+  int _generation = 0;
+
   Future<void> search(String keyword, {int? limit}) async {
     final cleaned = keyword.trim();
     if (cleaned.isEmpty) return;
@@ -27,6 +32,7 @@ class DashboardProvider extends ChangeNotifier {
       selectedLimit = limit;
     }
 
+    final int gen = ++_generation;
     try {
       isLoading = true;
       errorMessage = "";
@@ -34,19 +40,25 @@ class DashboardProvider extends ChangeNotifier {
       hasSearched = true;
       notifyListeners();
 
-      dashboardSummary = await _service.fetchResearchDashboardSummary(cleaned, selectedLimit);
-      papersRetrieved = dashboardSummary?.papersRetrieved ?? 0;
+      final summary =
+          await _service.fetchResearchDashboardSummary(cleaned, selectedLimit);
+      if (gen != _generation) return; // superseded or reset while loading
+      dashboardSummary = summary;
+      papersRetrieved = summary.papersRetrieved;
     } catch (e) {
+      if (gen != _generation) return;
       errorMessage = "Error: $e";
       dashboardSummary = null;
       papersRetrieved = 0;
     }
 
+    if (gen != _generation) return;
     isLoading = false;
     notifyListeners();
   }
 
   void reset() {
+    _generation++; // invalidate any in-flight search
     isLoading = false;
     errorMessage = "";
     currentTopic = "";

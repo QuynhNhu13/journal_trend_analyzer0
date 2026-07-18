@@ -6,11 +6,18 @@ class TopicSearchBar extends StatefulWidget {
   final String? initialValue;
   final ValueChanged<String> onSearch;
 
+  /// Optional keys for E2E tests: [fieldKey] on the text field, [submitKey] on
+  /// the submit button.
+  final Key? fieldKey;
+  final Key? submitKey;
+
   const TopicSearchBar({
     super.key,
     required this.hintText,
     required this.onSearch,
     this.initialValue,
+    this.fieldKey,
+    this.submitKey,
   });
 
   @override
@@ -67,6 +74,7 @@ class _TopicSearchBarState extends State<TopicSearchBar> {
         ],
       ),
       child: TextField(
+        key: widget.fieldKey,
         controller: _controller,
         focusNode: _focusNode,
         textInputAction: TextInputAction.search,
@@ -81,6 +89,7 @@ class _TopicSearchBarState extends State<TopicSearchBar> {
           suffixIcon: Padding(
             padding: const EdgeInsets.all(6),
             child: Material(
+              key: widget.submitKey,
               color: AppColors.primary,
               borderRadius: BorderRadius.circular(10),
               child: InkWell(
