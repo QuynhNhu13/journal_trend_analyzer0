@@ -71,7 +71,7 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.1
   # Generates the native (first-frame) splash screen from assets/logo.png.
   flutter_native_splash: ^2.4.1
-  patrol: ^4.6.1
+  patrol: ^4.7.1
 
 # ─── Launcher icon (run: dart run flutter_launcher_icons) ───────────────
 flutter_launcher_icons:

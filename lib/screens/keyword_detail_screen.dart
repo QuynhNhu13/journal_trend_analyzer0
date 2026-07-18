@@ -7,6 +7,7 @@ import '../firebase/analytics_service.dart';
 import '../l10n/locale_provider.dart';
 import '../models/author.dart';
 import '../theme/app_theme.dart';
+import '../utils/widget_keys.dart';
 import '../viewmodels/keyword_detail_view_model.dart';
 import '../widgets/common.dart';
 import 'author_detail_screen.dart';
@@ -44,6 +45,7 @@ class _KeywordDetailScreenState extends State<KeywordDetailScreen> {
       body: Column(
         children: [
           BrandedHeader(
+            key: const ValueKey(WidgetKeys.keywordDetailTitle),
             title: widget.keyword,
             subtitle: context.s.keywordDetailSubtitle,
             icon: Icons.tag_rounded,

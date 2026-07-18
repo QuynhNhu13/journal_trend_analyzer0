@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/publication.dart';
 import '../services/openalex_service.dart';
+import '../utils/async_utils.dart';
 
 class TrendProvider extends ChangeNotifier {
   final OpenAlexService _service = OpenAlexService();
@@ -22,13 +23,15 @@ class TrendProvider extends ChangeNotifier {
       currentTopic = cleaned;
       notifyListeners();
 
-      var futures = await Future.wait([
-        _service.fetchPublicationTrend(cleaned),
-        _service.fetchTopInfluentialPapers(cleaned),
-      ]);
+      // PRIMARY: the trend IS the screen — failure ⇒ error state (+ retry). The
+      // top-papers list is enrichment: degrade to empty so a hiccup there can't
+      // error the whole screen (endless error → retry loop).
+      final trendFuture = _service.fetchPublicationTrend(cleaned);
+      final topFuture = orFallback(
+          _service.fetchTopInfluentialPapers(cleaned), const <Publication>[]);
 
-      trendData = futures[0] as List<PublicationTrendPoint>;
-      topPapers = futures[1] as List<Publication>;
+      trendData = await trendFuture;
+      topPapers = await topFuture;
     } catch (e) {
       errorMessage = "Error: $e";
       trendData = [];

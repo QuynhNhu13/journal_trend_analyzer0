@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/author.dart';
 import '../models/publication.dart';
 import '../services/openalex_service.dart';
+import '../utils/async_utils.dart';
 
 class AuthorDetailProvider extends ChangeNotifier {
   final OpenAlexService _service = OpenAlexService();
@@ -20,13 +21,16 @@ class AuthorDetailProvider extends ChangeNotifier {
       publications = [];
       notifyListeners();
 
-      var futures = await Future.wait([
-        _service.fetchAuthorDetail(authorId),
-        _service.fetchAuthorPublications(authorId: authorId, topic: topic),
-      ]);
+      // PRIMARY: the author detail IS the page — failure ⇒ error state (+ retry).
+      // Their publications are enrichment: degrade to empty so a hiccup there
+      // can't error the whole screen (endless error → retry loop).
+      final authorFuture = _service.fetchAuthorDetail(authorId);
+      final pubsFuture = orFallback(
+          _service.fetchAuthorPublications(authorId: authorId, topic: topic),
+          const <Publication>[]);
 
-      author = futures[0] as AuthorDetail;
-      publications = futures[1] as List<Publication>;
+      author = await authorFuture;
+      publications = await pubsFuture;
     } catch (e) {
       errorMessage = "Error: $e";
       author = null;

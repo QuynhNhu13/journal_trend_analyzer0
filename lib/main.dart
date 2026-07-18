@@ -50,7 +50,7 @@ class JournalTrendApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => TopicProvider()),
         ChangeNotifierProvider(create: (_) => JournalsViewModel()),
         ChangeNotifierProvider(create: (_) => KeywordsViewModel()),
-        ChangeNotifierProvider(create: (_) => ProfileViewModel()),
+        ChangeNotifierProvider(create: (_) => ProfileViewModel()..loadHistory()),
         ChangeNotifierProvider.value(value: MessagingService.instance),
       ],
       child: const MyApp(),

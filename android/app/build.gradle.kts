@@ -40,6 +40,11 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // ── Patrol E2E test runner ──
+        testInstrumentationRunner = "pl.leancode.patrol.PatrolJUnitRunner"
+        // Keep app data (incl. the login session) between tests — do NOT clear.
+        testInstrumentationRunnerArguments["clearPackageData"] = "false"
     }
 
     buildTypes {
@@ -48,6 +53,12 @@ android {
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
         }
+    }
+
+    // Required by Patrol to run each test in isolation via the Android Test
+    // Orchestrator (while preserving app data — see clearPackageData=false above).
+    testOptions {
+        execution = "ANDROIDX_TEST_ORCHESTRATOR"
     }
 }
 
@@ -59,4 +70,6 @@ dependencies {
     // Enables java.time (and other newer APIs) on older Android via desugaring —
     // required by flutter_local_notifications.
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // Android Test Orchestrator used by Patrol.
+    androidTestUtil("androidx.test:orchestrator:1.5.1")
 }

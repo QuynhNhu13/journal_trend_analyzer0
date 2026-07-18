@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../models/author.dart';
 import '../models/publication.dart';
 import '../services/openalex_service.dart';
+import '../utils/async_utils.dart';
 
 /// ViewModel for Keyword Details (lab §4.7): trends, related journals,
 /// related publications, and top contributing authors (ranked descending).
@@ -27,24 +28,32 @@ class KeywordDetailViewModel extends ChangeNotifier {
     errorMessage = '';
     notifyListeners();
 
-    try {
-      final results = await Future.wait([
+    // Fire all requests concurrently. Trend + authors are ENRICHMENT: degrade to
+    // empty on failure so a flaky secondary call can't error the whole page
+    // (endless error → retry loop). Publications are the PRIMARY substance — if
+    // that fails the page genuinely couldn't load ⇒ error state (+ retry).
+    final pubsFuture = _service.searchPublication(keyword);
+    final trendFuture = orFallback(
         _service.fetchPublicationTrend(keyword),
-        _service.fetchTopAuthors(keyword),
-        _service.searchPublication(keyword),
-      ]);
+        const <PublicationTrendPoint>[]);
+    final authorsFuture =
+        orFallback(_service.fetchTopAuthors(keyword), const <TopAuthor>[]);
+
+    try {
+      final pubs = await pubsFuture;
+      final trendData = await trendFuture;
+      final authorsData = await authorsFuture;
       // A newer load superseded this one — drop the stale response.
       if (keyword != _currentKeyword) return;
 
-      trend = (results[0] as List<PublicationTrendPoint>)
+      trend = trendData
           .where((t) => t.year >= 1900 && t.year <= DateTime.now().year)
           .toList()
         ..sort((a, b) => a.year.compareTo(b.year));
 
       // Authors ranked descending by works count (§4.7 requirement).
-      authors = (results[1] as List<TopAuthor>).take(10).toList();
+      authors = authorsData.take(10).toList();
 
-      final pubs = results[2] as List<Publication>;
       publications = (pubs
             ..sort((a, b) => b.citationCount.compareTo(a.citationCount)))
           .take(15)

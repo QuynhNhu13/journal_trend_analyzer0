@@ -17,12 +17,35 @@ class OpenAlexService{
     )
   );
 
-  /// Safely coerces a decoded JSON value into a [List]. OpenAlex can return an
-  /// error object (or a partial body when a query is malformed) where we expect
-  /// a list; without this a non-list value would throw a TypeError and crash
-  /// the parse. Returns an empty list instead so the UI falls back to its empty
-  /// state.
-  static List _asList(dynamic value) => value is List ? value : const [];
+  /// Returns the JSON list at [value], or THROWS when it is missing / not a
+  /// list.
+  ///
+  /// OpenAlex always returns `results` / `group_by` as a list on a genuine
+  /// success — an empty list when there are simply no matches. A non-list here
+  /// means the request did NOT really succeed: an error object, a rate-limit
+  /// body, or a malformed payload returned with a 2xx status. We MUST surface
+  /// that as a failure. Returning an empty list (the previous behaviour) would
+  /// disguise a network/API error as a legitimate "no results" and mislead the
+  /// user — the exact bug the empty-vs-error UI distinction must avoid.
+  static List _requireList(dynamic value) {
+    if (value is List) return value;
+    throw Exception('Unexpected OpenAlex response (expected a list)');
+  }
+
+  /// Awaits [future], returning [fallback] if it fails.
+  ///
+  /// Used for the dashboard's AUXILIARY (enrichment) requests. The dashboard
+  /// fans out several parallel calls; a hiccup in one of them must NOT turn a
+  /// working search into an error — otherwise the UI flips to the error state
+  /// and the test's auto-retry keeps re-searching endlessly. Success vs failure
+  /// is decided solely by the PRIMARY request (see [fetchResearchDashboardSummary]).
+  static Future<T> _orFallback<T>(Future<T> future, T fallback) async {
+    try {
+      return await future;
+    } catch (_) {
+      return fallback;
+    }
+  }
 
   // Shared author name filter
   static bool _isValidAuthorName(String name) {
@@ -49,7 +72,7 @@ class OpenAlexService{
         'https://api.openalex.org/works',
         queryParameters: {'search': keyword, 'per-page': 200},
       );
-      final results = _asList(response.data['results']);
+      final results = _requireList(response.data['results']);
       return results.map((e) => Publication.fromJson(e)).toList();
     }catch(e){
       throw Exception("API Failed");
@@ -62,7 +85,7 @@ class OpenAlexService{
         'https://api.openalex.org/works',
         queryParameters: {'search': keyword, 'group_by': 'publication_year'},
       );
-      final results = _asList(response.data['group_by']);
+      final results = _requireList(response.data['group_by']);
       return results.map((e) => PublicationTrendPoint.fromJson(e)).toList();
     }catch(e){
       throw Exception("Trend API Failed");
@@ -79,7 +102,7 @@ class OpenAlexService{
           'per-page': 20,
         },
       );
-      final results = _asList(response.data['results']);
+      final results = _requireList(response.data['results']);
       return results.map((e) => Publication.fromJson(e)).toList();
     } catch (e) {
       throw Exception("Top Papers API Failed");
@@ -95,7 +118,7 @@ class OpenAlexService{
           'group_by': 'authorships.author.id',
         },
       );
-      final results = _asList(response.data['group_by']);
+      final results = _requireList(response.data['group_by']);
 
       Map<String, TopAuthor> mergedAuthors = {};
       
@@ -150,7 +173,7 @@ class OpenAlexService{
           'per-page': 25,
         },
       );
-      final results = _asList(response.data['results']);
+      final results = _requireList(response.data['results']);
       return results.map((e) => Publication.fromJson(e)).toList();
     } catch (e) {
       throw Exception("Author Publications API Failed");
@@ -168,7 +191,7 @@ class OpenAlexService{
           'group_by': 'keywords.id',
         },
       );
-      final results = _asList(response.data['group_by']);
+      final results = _requireList(response.data['group_by']);
       final entries = <MapEntry<String, int>>[];
       for (var e in results) {
         final name = e['key_display_name']?.toString().trim() ?? '';
@@ -185,18 +208,6 @@ class OpenAlexService{
 
   // Dashboard-specific API methods
 
-  Future<int> fetchTotalPublicationCount(String keyword) async {
-    try {
-      final response = await dio.get(
-        'https://api.openalex.org/works',
-        queryParameters: {'search': keyword, 'per-page': 1},
-      );
-      return response.data['meta']?['count'] ?? 0;
-    } catch (e) {
-      return 0;
-    }
-  }
-
   Future<String?> fetchTopJournal(String keyword) async {
     try {
       final response = await dio.get(
@@ -206,13 +217,13 @@ class OpenAlexService{
           'group_by': 'primary_location.source.id',
         },
       );
-      final results = _asList(response.data['group_by']);
+      final results = _requireList(response.data['group_by']);
       if (results.isNotEmpty) {
         return results[0]['key_display_name']?.toString();
       }
-      return null;
+      return null; // request OK, simply no journal data
     } catch (e) {
-      return null;
+      throw Exception('Top Journal API Failed');
     }
   }
 
@@ -225,44 +236,34 @@ class OpenAlexService{
           'group_by': 'authorships.author.id',
         },
       );
-      final results = _asList(response.data['group_by']);
+      final results = _requireList(response.data['group_by']);
       for (var entry in results) {
         String name = entry['key_display_name']?.toString().trim() ?? "";
         if (_isValidAuthorName(name)) {
           return name;
         }
       }
-      return null;
+      return null; // request OK, no valid author found
     } catch (e) {
-      return null;
+      throw Exception('Dashboard Top Author API Failed');
     }
   }
 
-  Future<Publication?> fetchMostInfluentialPaper(String keyword) async {
-    try {
-      final response = await dio.get(
-        'https://api.openalex.org/works',
-        queryParameters: {
-          'search': keyword,
-          'sort': 'cited_by_count:desc',
-          'per-page': 1,
-        },
-      );
-      final results = _asList(response.data['results']);
-      if (results.isNotEmpty) {
-        return Publication.fromJson(results[0]);
-      }
-      return null;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  /// Fetches up to [limit] papers and returns both the average citation count
-  /// and the real number of papers retrieved (`results.length`, which may be
-  /// less than [limit] when fewer matching works exist).
-  Future<({double avg, int count})> fetchCitationStats(
-      String keyword, int limit) async {
+  /// The dashboard's single AUTHORITATIVE request. One `works` call sorted by
+  /// citations yields everything that decides success/empty plus the headline
+  /// result, all from the same response:
+  ///   • `meta.count`    → total matching publications (0 ⇒ empty state),
+  ///   • `results`       → papers actually retrieved (for avg citations + count),
+  ///   • `results.first` → the most-influential paper (drives the "Most
+  ///                        Influential" card and its Details button).
+  ///
+  /// Throws on a real failure so the UI shows the error state. Deriving the
+  /// most-influential paper from THIS response (instead of a separate,
+  /// independently-degradable fetch) guarantees the card + Details entry point
+  /// always render whenever the search returned papers — a separate call could
+  /// drop the paper (and the button) on a successful search and break the flow.
+  Future<({int total, double avg, int count, Publication? mostInfluential})>
+      _fetchCoreResults(String keyword, int limit) async {
     try {
       final response = await dio.get(
         'https://api.openalex.org/works',
@@ -272,36 +273,54 @@ class OpenAlexService{
           'per-page': limit,
         },
       );
-      final results = _asList(response.data['results']);
-      if (results.isEmpty) return (avg: 0.0, count: 0);
+      final total = response.data['meta']?['count'];
+      // A genuine success always carries an integer meta.count (0 when there are
+      // no matches). Its absence means the response is not a real success.
+      if (total is! int) {
+        throw Exception('Unexpected OpenAlex response (missing meta.count)');
+      }
+      final results = _requireList(response.data['results']);
+      if (results.isEmpty) {
+        return (total: total, avg: 0.0, count: 0, mostInfluential: null);
+      }
       int totalCitations = 0;
       for (var r in results) {
         totalCitations += (r['cited_by_count'] as int?) ?? 0;
       }
-      return (avg: totalCitations / results.length, count: results.length);
+      return (
+        total: total,
+        avg: totalCitations / results.length,
+        count: results.length,
+        mostInfluential: Publication.fromJson(results[0]),
+      );
     } catch (e) {
-      return (avg: 0.0, count: 0);
+      throw Exception('Search API Failed');
     }
   }
 
   Future<ResearchDashboardSummary> fetchResearchDashboardSummary(String keyword, int limit) async {
-    var futures = await Future.wait([
-      fetchTotalPublicationCount(keyword),      // 0
-      fetchPublicationTrend(keyword),            // 1
-      fetchTopJournal(keyword),                  // 2
-      fetchDashboardTopAuthor(keyword),          // 3
-      fetchMostInfluentialPaper(keyword),         // 4
-      fetchCitationStats(keyword, limit),         // 5
-    ]);
+    // Enrichment requests: degrade to a safe default on failure so a flaky
+    // secondary call can't error the whole dashboard (which trapped the UI in an
+    // endless error → retry loop). They never affect the success/empty decision.
+    final trendFuture = _orFallback<List<PublicationTrendPoint>>(
+        fetchPublicationTrend(keyword), const []);
+    final topJournalFuture =
+        _orFallback<String?>(fetchTopJournal(keyword), null);
+    final topAuthorFuture =
+        _orFallback<String?>(fetchDashboardTopAuthor(keyword), null);
 
-    int totalPublications = futures[0] as int;
-    List<PublicationTrendPoint> trend = futures[1] as List<PublicationTrendPoint>;
-    String? topJournal = futures[2] as String?;
-    String? topAuthor = futures[3] as String?;
-    Publication? mostInfluential = futures[4] as Publication?;
-    final citationStats = futures[5] as ({double avg, int count});
-    double avgCitations = citationStats.avg;
-    int papersRetrieved = citationStats.count;
+    // PRIMARY signal — ONE authoritative request (mirrors how Journals/Keywords
+    // rely on a single call). It throws on real failure (⇒ error state + retry)
+    // and returns total count, retrieved papers AND the most-influential paper
+    // together, so the "Most Influential" card + its Details button always
+    // render whenever the search returned results.
+    //   • throws     → search genuinely failed ⇒ error state, not a fake "empty".
+    //   • total == 0 → search OK but the topic has no papers ⇒ empty state.
+    final core = await _fetchCoreResults(keyword, limit);
+
+    final trend = await trendFuture;
+    final topJournal = await topJournalFuture;
+    final topAuthor = await topAuthorFuture;
 
     // Most active year from trend data
     int? mostActiveYear;
@@ -314,14 +333,14 @@ class OpenAlexService{
     }
 
     return ResearchDashboardSummary(
-      totalPublications: totalPublications,
-      averageCitationCount: avgCitations,
+      totalPublications: core.total,
+      averageCitationCount: core.avg,
       mostActiveYear: mostActiveYear,
       topJournal: topJournal,
       topAuthor: topAuthor,
-      mostInfluentialPaper: mostInfluential,
+      mostInfluentialPaper: core.mostInfluential,
       publicationTrend: trend,
-      papersRetrieved: papersRetrieved,
+      papersRetrieved: core.count,
     );
   }
 }

@@ -12,6 +12,12 @@ class StorageService {
   FirebaseStorage get _storage => FirebaseStorage.instance;
 
   /// Uploads [file] to `reports/<fileName>` and returns its public download URL.
+  ///
+  /// NOTE (quota): [fileName] carries a timestamp (see `PdfReportService`), so
+  /// every export writes a NEW object — repeated testing accumulates files in
+  /// the bucket and they are never deleted from the app side. Purge
+  /// `reports/` in the Firebase Console periodically, or set a Storage
+  /// lifecycle rule, so test runs don't silently grow the bill.
   Future<String> uploadReport(File file, String fileName) async {
     if (!firebaseReady) {
       throw StateError('Firebase chưa cấu hình — không thể tải lên Storage.');

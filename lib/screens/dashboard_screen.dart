@@ -12,6 +12,7 @@ import '../providers/top_journal_provider.dart';
 import '../providers/top_author_provider.dart';
 import '../models/dashboard_summary.dart';
 import '../theme/app_theme.dart';
+import '../utils/widget_keys.dart';
 import '../viewmodels/topic_provider.dart';
 import '../viewmodels/topic_reset.dart';
 import '../widgets/collapsible_branded_header.dart';
@@ -98,6 +99,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                 hintText: context.s.searchTopicHint,
                 initialValue: topic,
                 onSearch: _onSearch,
+                fieldKey: const ValueKey(WidgetKeys.searchFieldHome),
+                submitKey: const ValueKey(WidgetKeys.searchSubmitHome),
               ),
               if (topic.isNotEmpty) ...[
                 const SizedBox(height: 12),
@@ -465,7 +468,8 @@ class _DashboardScreenState extends State<DashboardScreen>
           children: [
             Expanded(
                 child: _kpiCard(context.s.kpiTotalPapers, totalText,
-                    Icons.description_rounded, AppColors.primary)),
+                    Icons.description_rounded, AppColors.primary,
+                    cardKey: const ValueKey(WidgetKeys.dashboardTotalPapers))),
             const SizedBox(width: 12),
             Expanded(
                 child: _kpiCard(context.s.kpiAvgCitations, avgText,
@@ -497,8 +501,10 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _kpiCard(String title, String value, IconData icon, Color color) {
+  Widget _kpiCard(String title, String value, IconData icon, Color color,
+      {Key? cardKey}) {
     return SectionCard(
+      key: cardKey,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -792,6 +798,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             children: [
               Expanded(
                 child: OutlinedButton.icon(
+                  key: const ValueKey(WidgetKeys.dashboardPaperDetails),
                   onPressed: () => Navigator.push(context,
                       MaterialPageRoute(
                           builder: (_) => DetailScreen(publication: paper))),

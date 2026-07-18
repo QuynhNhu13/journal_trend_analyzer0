@@ -4,6 +4,7 @@ import '../firebase/analytics_service.dart';
 import '../l10n/locale_provider.dart';
 import '../models/journal_stat.dart';
 import '../theme/app_theme.dart';
+import '../utils/widget_keys.dart';
 import '../widgets/common.dart';
 import 'detail_screen.dart';
 
@@ -32,6 +33,7 @@ class _JournalDetailScreenState extends State<JournalDetailScreen> {
       body: Column(
         children: [
           BrandedHeader(
+            key: const ValueKey(WidgetKeys.journalDetailTitle),
             title: j.name,
             subtitle: context.s.journalDetailSubtitle,
             icon: Icons.menu_book_rounded,
@@ -64,7 +66,12 @@ class _JournalDetailScreenState extends State<JournalDetailScreen> {
                         fontWeight: FontWeight.w800,
                         color: AppColors.ink)),
                 const SizedBox(height: 12),
-                ...j.publications.map((p) => Padding(
+                ...j.publications.asMap().entries.map((entry) {
+                  final p = entry.value;
+                  return Padding(
+                      key: entry.key == 0
+                          ? const ValueKey(WidgetKeys.publicationListFirst)
+                          : null,
                       padding: const EdgeInsets.only(bottom: 12),
                       child: SectionCard(
                         padding: const EdgeInsets.all(14),
@@ -102,7 +109,8 @@ class _JournalDetailScreenState extends State<JournalDetailScreen> {
                           ),
                         ),
                       ),
-                    )),
+                    );
+                }),
               ],
             ),
           ),

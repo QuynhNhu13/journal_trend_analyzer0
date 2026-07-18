@@ -5,6 +5,7 @@ import '../firebase/analytics_service.dart';
 import '../l10n/locale_provider.dart';
 import '../models/publication.dart';
 import '../theme/app_theme.dart';
+import '../utils/widget_keys.dart';
 import '../widgets/common.dart';
 
 class DetailScreen extends StatefulWidget {
@@ -45,7 +46,8 @@ class _DetailScreenState extends State<DetailScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(context.s.detailAppBarTitle),
+        title: Text(context.s.detailAppBarTitle,
+            key: const ValueKey(WidgetKeys.publicationDetailTitle)),
         actions: [
           if (p.doi.isNotEmpty)
             IconButton(
