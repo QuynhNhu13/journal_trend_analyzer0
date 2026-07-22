@@ -1,0 +1,27 @@
+rules_version = '2';
+
+// Firestore security rules for the Journal Trend Analyzer admin console.
+//
+// Scope: the `admins` collection is a new, admin-only allowlist used by the web
+// dashboard. Documents are keyed by admin email (document id == email) and may
+// carry arbitrary profile fields — presence of the document is what grants
+// access. Admins are added/removed exclusively from the Firebase Console, never
+// from a client, so writes are denied to everyone here.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Any signed-in user may read the allowlist so the app can check whether
+    // their own account is an administrator. No client may create, update, or
+    // delete entries — manage them in the Firebase Console.
+    match /admins/{email} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // Deny everything else by default. Extend this block in a later phase if the
+    // admin console starts using additional Firestore collections.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
