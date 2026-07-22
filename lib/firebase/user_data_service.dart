@@ -60,6 +60,25 @@ class UserDataService {
     }
   }
 
+  /// Stores the device's FCM token on the signed-in user's profile so the web
+  /// admin can push notifications to specific users. Safe to call repeatedly.
+  Future<void> saveFcmToken(String token) async {
+    if (!_ready || token.isEmpty) return;
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    try {
+      await _db.collection('users').doc(uid).set(
+        {
+          'fcmToken': token,
+          'fcmTokenUpdatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+    } catch (e, s) {
+      await CrashlyticsService.instance
+          .recordError(e, s, reason: 'saveFcmToken failed');
+    }
+  }
+
   /// Increments `searchCount` and refreshes `lastActiveAt` on a successful search.
   Future<void> recordSearch() async {
     if (!_ready) return;

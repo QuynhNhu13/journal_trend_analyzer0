@@ -17,6 +17,52 @@ import { fetchOverview } from '../services/overviewService';
 
 const nf = new Intl.NumberFormat('en-US');
 
+const PROJECT_ID = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+const CONSOLE_BASE = `https://console.firebase.google.com/project/${PROJECT_ID}`;
+
+interface MonitorLink {
+  href: string;
+  title: string;
+  description: string;
+}
+
+function MonitoringCard({ links }: { links: MonitorLink[] }) {
+  return (
+    <Card>
+      <SectionTitle icon="alert" title={strings.overview.monitoringTitle} />
+      <p className="mt-2 pl-12 text-sm text-muted">{strings.overview.monitoringNote}</p>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        {links.map((link) => (
+          <a
+            key={link.href}
+            href={link.href}
+            target="_blank"
+            rel="noreferrer"
+            className="group flex items-start gap-3 rounded-md border border-hairline p-4 transition hover:border-brand hover:shadow-soft"
+          >
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-brand-soft text-brand">
+              <Icon name="external" className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-bold text-ink">{link.title}</p>
+                <Icon
+                  name="external"
+                  className="h-4 w-4 text-faint transition group-hover:text-brand"
+                />
+              </div>
+              <p className="mt-0.5 text-sm text-muted">{link.description}</p>
+              <p className="mt-2 text-xs font-semibold text-brand">
+                {strings.overview.openConsole}
+              </p>
+            </div>
+          </a>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
 export function DashboardPage() {
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -213,6 +259,22 @@ export function DashboardPage() {
             </div>
           </>
         ) : null}
+
+        {/* Advanced monitoring — deep links to Firebase Console (Part F). */}
+        <MonitoringCard
+          links={[
+            {
+              href: `${CONSOLE_BASE}/crashlytics`,
+              title: strings.overview.crashlyticsCard,
+              description: strings.overview.crashlyticsDesc,
+            },
+            {
+              href: `${CONSOLE_BASE}/analytics/app/android:com.example.journal_trend_analyzer/debugview`,
+              title: strings.overview.analyticsCard,
+              description: strings.overview.analyticsDesc,
+            },
+          ]}
+        />
       </div>
     </div>
   );

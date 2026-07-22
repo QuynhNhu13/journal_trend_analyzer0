@@ -22,7 +22,18 @@ export type IconName =
   | 'alert'
   | 'external'
   | 'copy'
-  | 'trash';
+  | 'trash'
+  | 'list'
+  | 'plus'
+  | 'folder'
+  | 'upload'
+  | 'download'
+  | 'pencil'
+  | 'check'
+  | 'send'
+  | 'refresh'
+  | 'unlock'
+  | 'home';
 
 type IconProps = SVGProps<SVGSVGElement> & { name: IconName };
 
@@ -162,6 +173,69 @@ const PATHS: Record<IconName, JSX.Element> = {
       <path d="M6 7l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12" />
       <line x1="10" y1="11" x2="10" y2="17" />
       <line x1="14" y1="11" x2="14" y2="17" />
+    </>
+  ),
+  list: (
+    <>
+      <line x1="8" y1="7" x2="20" y2="7" />
+      <line x1="8" y1="12" x2="20" y2="12" />
+      <line x1="8" y1="17" x2="20" y2="17" />
+      <circle cx="4" cy="7" r="1" />
+      <circle cx="4" cy="12" r="1" />
+      <circle cx="4" cy="17" r="1" />
+    </>
+  ),
+  plus: (
+    <>
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </>
+  ),
+  folder: <path d="M3 7a1 1 0 0 1 1-1h5l2 2h8a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z" />,
+  upload: (
+    <>
+      <path d="M4 15v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
+      <path d="M12 4v12" />
+      <path d="M8 8l4-4 4 4" />
+    </>
+  ),
+  download: (
+    <>
+      <path d="M4 15v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
+      <path d="M12 4v12" />
+      <path d="M8 12l4 4 4-4" />
+    </>
+  ),
+  pencil: (
+    <>
+      <path d="M4 20h4L18.5 9.5a2 2 0 0 0-2.83-2.83L5 17.5V20Z" />
+      <path d="M14 7l3 3" />
+    </>
+  ),
+  check: <path d="M5 12l5 5L20 7" />,
+  send: (
+    <>
+      <path d="M4 12l16-7-7 16-2.5-6.5L4 12Z" />
+    </>
+  ),
+  refresh: (
+    <>
+      <path d="M4 12a8 8 0 0 1 13.7-5.6L20 9" />
+      <path d="M20 4v5h-5" />
+      <path d="M20 12a8 8 0 0 1-13.7 5.6L4 15" />
+      <path d="M4 20v-5h5" />
+    </>
+  ),
+  unlock: (
+    <>
+      <rect x="5" y="11" width="14" height="9" rx="2" />
+      <path d="M8 11V8a4 4 0 0 1 7.5-2" />
+    </>
+  ),
+  home: (
+    <>
+      <path d="M4 11l8-7 8 7" />
+      <path d="M6 10v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-9" />
     </>
   ),
 };

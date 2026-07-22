@@ -1,6 +1,7 @@
 import { initializeApp, type FirebaseOptions } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getFunctions } from 'firebase/functions';
 import { getStorage } from 'firebase/storage';
 
 // Firebase web config is injected from environment variables (see .env.example).
@@ -19,6 +20,10 @@ export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+
+// Callable Cloud Functions run in asia-southeast1 — must match the functions'
+// deployed region or calls will 404.
+export const functions = getFunctions(app, 'asia-southeast1');
 
 // Google Sign-In provider used on the login screen (signInWithPopup).
 export const googleProvider = new GoogleAuthProvider();

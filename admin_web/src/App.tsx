@@ -9,6 +9,7 @@ import { UsersPage } from './pages/UsersPage';
 import { NotificationsPage } from './pages/NotificationsPage';
 import { ConfigPage } from './pages/ConfigPage';
 import { ReportsPage } from './pages/ReportsPage';
+import { LogsPage } from './pages/LogsPage';
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="config" element={<ConfigPage />} />
         <Route path="reports" element={<ReportsPage />} />
+        <Route path="logs" element={<LogsPage />} />
       </Route>
 
       {/* Unknown routes fall back to the dashboard (which enforces auth). */}

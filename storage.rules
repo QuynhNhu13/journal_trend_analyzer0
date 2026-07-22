@@ -18,12 +18,14 @@ service firebase.storage {
         && firestore.exists(/databases/(default)/documents/admins/$(request.auth.token.email));
     }
 
-    // Exported PDF reports.
+    // Exported PDF reports + the admin File Manager subtree (recursive so nested
+    // folders created from the web work too).
     //  - read   : any signed-in user (the app reads its own uploads; the admin
-    //             console lists the folder to compute sizes).
-    //  - create/update : any signed-in user — the Flutter app uploads here.
-    //  - delete : admins only (Reports page "Delete" action).
-    match /reports/{fileName} {
+    //             console lists folders and computes sizes).
+    //  - create/update : any signed-in user — the Flutter app uploads exports
+    //             here, and admins upload/rename/create folders from the web.
+    //  - delete : admins only (File Manager delete / rename-then-delete).
+    match /reports/{allPaths=**} {
       allow read: if isSignedIn();
       allow create, update: if isSignedIn();
       allow delete: if isAdmin();

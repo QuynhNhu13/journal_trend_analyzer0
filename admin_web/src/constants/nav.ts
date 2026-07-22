@@ -17,7 +17,8 @@ export type NavIconName =
   | 'users'
   | 'bell'
   | 'sliders'
-  | 'file';
+  | 'file'
+  | 'list';
 
 export const NAV_ITEMS: readonly NavItem[] = [
   { to: '/', label: strings.nav.dashboard, icon: 'dashboard', end: true },
@@ -25,4 +26,5 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { to: '/notifications', label: strings.nav.notifications, icon: 'bell' },
   { to: '/config', label: strings.nav.config, icon: 'sliders' },
   { to: '/reports', label: strings.nav.reports, icon: 'file' },
+  { to: '/logs', label: strings.nav.logs, icon: 'list' },
 ] as const;

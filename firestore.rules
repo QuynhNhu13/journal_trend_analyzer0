@@ -50,6 +50,21 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    // ── notifications ───────────────────────────────────────────────────────
+    // Send history for the admin console. Written only by Cloud Functions
+    // (Admin SDK bypasses these rules); admins may read, clients may not write.
+    match /notifications/{notificationId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // ── admin_logs ──────────────────────────────────────────────────────────
+    // Audit trail written only by Cloud Functions. Admins read; no client write.
+    match /admin_logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     // Deny everything else by default.
     match /{document=**} {
       allow read, write: if false;
