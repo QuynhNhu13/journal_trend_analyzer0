@@ -7,6 +7,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../firebase/analytics_service.dart';
 import '../firebase/auth_service.dart';
 import '../firebase/firebase_bootstrap.dart';
+import '../firebase/user_data_service.dart';
 
 /// ViewModel for authentication. Exposes the current user and sign-in/out
 /// actions to the Views. Business logic lives here, not in the UI.
@@ -64,6 +65,9 @@ class AuthViewModel extends ChangeNotifier {
       final user = await _authService.signInWithGoogle();
       if (user != null) {
         await _analytics.logLogin();
+        // Best-effort: mirror the user profile to Firestore for the web admin.
+        // Fire-and-forget so a Firestore hiccup never blocks/breaks sign-in.
+        unawaited(UserDataService.instance.recordLogin(user));
       }
     } on GoogleSignInException catch (e) {
       // User cancelled or a Google-side error.

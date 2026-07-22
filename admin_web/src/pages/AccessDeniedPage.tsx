@@ -4,6 +4,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { strings } from '../constants/strings';
 import { Icon } from '../components/ui/Icon';
+import { LoadingState } from '../components/ui/StateView';
 
 /**
  * Shown when a signed-in Google account is not present in the `admins`
@@ -12,6 +13,16 @@ import { Icon } from '../components/ui/Icon';
 export function AccessDeniedPage() {
   const { status, user, signOut } = useAuth();
   const [busy, setBusy] = useState(false);
+
+  // Wait for AuthContext to resolve before deciding — otherwise the denial UI
+  // flashes before a valid admin is redirected into the dashboard.
+  if (status === 'loading') {
+    return (
+      <div className="grid min-h-screen place-items-center bg-canvas">
+        <LoadingState message={strings.auth.checking} />
+      </div>
+    );
+  }
 
   // If the session isn't actually "signed in but not admin", bounce away.
   if (status === 'unauthenticated') return <Navigate to="/login" replace />;

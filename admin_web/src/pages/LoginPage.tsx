@@ -15,6 +15,16 @@ export function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // While auth is still resolving, show a spinner instead of flashing the
+  // sign-in UI (which would then immediately redirect on refresh).
+  if (status === 'loading') {
+    return (
+      <div className="grid min-h-screen place-items-center bg-brand">
+        <Spinner size={40} className="border-white" />
+      </div>
+    );
+  }
+
   // Already resolved sessions skip the login screen.
   if (status === 'authorized') return <Navigate to="/" replace />;
   if (status === 'unauthorized') return <Navigate to="/access-denied" replace />;

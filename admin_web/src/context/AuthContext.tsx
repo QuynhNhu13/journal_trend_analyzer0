@@ -53,7 +53,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
+    // Each auth event gets a monotonically increasing id. An awaited admin check
+    // only applies its result if no newer event has fired meanwhile, so a check
+    // from a previous user (or a signed-out state) can't overwrite the current
+    // status.
+    let latestEvent = 0;
+
     const unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
+      const event = ++latestEvent;
       setUser(nextUser);
 
       if (!nextUser) {
@@ -66,10 +73,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setStatus('loading');
       try {
         const allowed = await isAdminEmail(nextUser.email);
+        if (event !== latestEvent) return; // superseded by a newer auth event
         setStatus(allowed ? 'authorized' : 'unauthorized');
       } catch {
         // A rules rejection or network error is treated as "not authorized"
         // rather than crashing the app.
+        if (event !== latestEvent) return;
         setStatus('unauthorized');
       }
     });

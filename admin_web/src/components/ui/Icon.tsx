@@ -19,7 +19,10 @@ export type IconName =
   | 'spark'
   | 'chevronRight'
   | 'inbox'
-  | 'alert';
+  | 'alert'
+  | 'external'
+  | 'copy'
+  | 'trash';
 
 type IconProps = SVGProps<SVGSVGElement> & { name: IconName };
 
@@ -137,6 +140,28 @@ const PATHS: Record<IconName, JSX.Element> = {
       <path d="M12 4l9 16H3Z" />
       <line x1="12" y1="10" x2="12" y2="14" />
       <line x1="12" y1="17" x2="12" y2="17.5" />
+    </>
+  ),
+  external: (
+    <>
+      <path d="M14 4h6v6" />
+      <path d="M20 4l-9 9" />
+      <path d="M18 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5" />
+    </>
+  ),
+  copy: (
+    <>
+      <rect x="9" y="9" width="11" height="11" rx="2" />
+      <path d="M6 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1" />
+    </>
+  ),
+  trash: (
+    <>
+      <path d="M4 7h16" />
+      <path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+      <path d="M6 7l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12" />
+      <line x1="10" y1="11" x2="10" y2="17" />
+      <line x1="14" y1="11" x2="14" y2="17" />
     </>
   ),
 };

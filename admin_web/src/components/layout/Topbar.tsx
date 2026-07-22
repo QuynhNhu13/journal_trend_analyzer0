@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { strings } from '../../constants/strings';
 import { Icon } from '../ui/Icon';
+import { useToast } from '../ui/Toast';
 
 /**
  * Top bar: hamburger (mobile only) on the left, admin identity + sign-out on the
@@ -10,6 +11,7 @@ import { Icon } from '../ui/Icon';
  */
 export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
   const { user, signOut } = useAuth();
+  const { showToast } = useToast();
   const [signingOut, setSigningOut] = useState(false);
 
   const name = user?.displayName ?? user?.email ?? 'Admin';
@@ -20,6 +22,8 @@ export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
     setSigningOut(true);
     try {
       await signOut();
+    } catch {
+      showToast(strings.auth.signOutError, 'error');
     } finally {
       setSigningOut(false);
     }

@@ -28,7 +28,7 @@ npm run dev            # http://localhost:5173
 Values come from Firebase Console → Project settings → General → Your apps →
 `journal_trend_analyzer (web)`:
 
-```
+```dotenv
 VITE_FIREBASE_API_KEY=...
 VITE_FIREBASE_AUTH_DOMAIN=journal-trend-analyzer-3f87b.firebaseapp.com
 VITE_FIREBASE_PROJECT_ID=journal-trend-analyzer-3f87b

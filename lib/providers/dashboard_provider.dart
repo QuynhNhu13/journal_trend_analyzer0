@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import '../firebase/user_data_service.dart';
 import '../models/dashboard_summary.dart';
 import '../services/openalex_service.dart';
 
@@ -45,6 +48,8 @@ class DashboardProvider extends ChangeNotifier {
       if (gen != _generation) return; // superseded or reset while loading
       dashboardSummary = summary;
       papersRetrieved = summary.papersRetrieved;
+      // Best-effort activity counter for the web admin (fire-and-forget).
+      unawaited(UserDataService.instance.recordSearch());
     } catch (e) {
       if (gen != _generation) return;
       errorMessage = "Error: $e";
