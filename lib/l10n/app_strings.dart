@@ -451,6 +451,9 @@ class AppStrings {
       _t('Already up to date', 'Đã là mới nhất');
   String get remoteConfigFetchFailed => _t(
       'Fetch failed — check network', 'Fetch thất bại — kiểm tra mạng');
+  String get remoteConfigThrottled => _t(
+      'Rate limited — try again in a few seconds',
+      'Đang bị giới hạn tần suất — thử lại sau vài giây');
   String get handledExceptionButton =>
       _t('Handled exception', 'Ngoại lệ đã xử lý');
   String get testCrashButton => _t('Test crash', 'Thử gây crash');

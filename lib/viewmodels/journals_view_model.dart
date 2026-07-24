@@ -11,10 +11,18 @@ import '../services/openalex_service.dart';
 class JournalsViewModel extends ChangeNotifier {
   final OpenAlexService _service = OpenAlexService.instance;
 
-  List<JournalStat> journals = [];
+  /// Full, unsliced result from the last search. [journals] is DERIVED from
+  /// this, so the Remote Config limit is applied live on every read — a Profile
+  /// Refresh re-slices the list without needing a new search or an app restart.
+  List<JournalStat> _all = [];
+
   bool isLoading = false;
   String errorMessage = '';
   String currentTopic = '';
+
+  /// Journals to display, limited by the current `max_journals_displayed`.
+  List<JournalStat> get journals =>
+      _all.take(RemoteConfigService.instance.maxJournals).toList();
 
   int get maxCount => journals.isEmpty ? 1 : journals.first.publicationCount;
 
@@ -50,12 +58,12 @@ class JournalsViewModel extends ChangeNotifier {
       }).toList()
         ..sort((a, b) => b.publicationCount.compareTo(a.publicationCount));
 
-      final limit = RemoteConfigService.instance.maxJournals;
-      journals = stats.take(limit).toList();
+      // Keep the FULL list; the `journals` getter applies the live RC limit.
+      _all = stats;
     } catch (e) {
       if (cleaned != currentTopic) return;
       errorMessage = 'Không tải được dữ liệu tạp chí: $e';
-      journals = [];
+      _all = [];
     }
 
     if (cleaned != currentTopic) return;
@@ -64,10 +72,14 @@ class JournalsViewModel extends ChangeNotifier {
   }
 
   void reset() {
-    journals = [];
+    _all = [];
     errorMessage = '';
     currentTopic = '';
     isLoading = false;
     notifyListeners();
   }
+
+  /// Re-emits the (re-sliced) list after `max_journals_displayed` changed, so
+  /// the Journals tab reflects a new limit without a re-search or app restart.
+  void reapplyLimit() => notifyListeners();
 }

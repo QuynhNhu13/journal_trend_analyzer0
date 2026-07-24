@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  body {
+    @apply bg-canvas text-body font-sans selection:bg-brand-soft selection:text-brand;
+  }
+
+  /* Numeric data lines up in columns everywhere it matters. */
+  .tnums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Consistent, keyboard-friendly focus ring for interactive elements. */
+  a:focus-visible,
+  button:focus-visible,
+  select:focus-visible,
+  [role='button']:focus-visible,
+  [tabindex]:focus-visible,
+  input[type='checkbox']:focus-visible {
+    outline: 2px solid rgb(219 39 119 / 0.55);
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
+
+  /* Custom scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(219, 39, 119, 0.2);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(219, 39, 119, 0.4);
+  }
+}
+
+.gradient-brand {
+  background: linear-gradient(135deg, #F472B6 0%, #DB2777 100%);
+}
+
+.gradient-brand-text {
+  background: linear-gradient(135deg, #EC4899 0%, #DB2777 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(243, 232, 238, 0.8);
+}
+

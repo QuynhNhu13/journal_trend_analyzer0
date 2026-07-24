@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'firebase_bootstrap.dart';
+import 'user_data_service.dart';
 
 /// A single push notification received via FCM (lab §4.8 "Notification Center").
 class AppNotification {
@@ -76,6 +79,18 @@ class MessagingService extends ChangeNotifier {
 
       _token = await fm.getToken();
       debugPrint('🔑 FCM token: $_token');
+
+      // Mirror the token to Firestore (users/{uid}.fcmToken) so the web admin can
+      // target this device. If no user is signed in yet, this no-ops; the token
+      // is re-persisted after login via [persistTokenForCurrentUser], and any
+      // future rotation is caught by onTokenRefresh below.
+      if (_token != null) {
+        unawaited(UserDataService.instance.saveFcmToken(_token!));
+      }
+      fm.onTokenRefresh.listen((refreshed) {
+        _token = refreshed;
+        unawaited(UserDataService.instance.saveFcmToken(refreshed));
+      });
 
       // Foreground → add to the feed AND show a heads-up banner ourselves
       // (FCM does not display anything while the app is in the foreground).
@@ -167,6 +182,16 @@ class MessagingService extends ChangeNotifier {
       ),
     );
     notifyListeners();
+  }
+
+  /// Re-writes the current FCM token to the signed-in user's profile. Called
+  /// right after login, since the token is usually obtained at startup (before
+  /// a user exists) and would otherwise never attach to that user.
+  Future<void> persistTokenForCurrentUser() async {
+    final current = _token;
+    if (current != null) {
+      await UserDataService.instance.saveFcmToken(current);
+    }
   }
 
   // ── Tab-navigation signal (consumed by MainShell) ──

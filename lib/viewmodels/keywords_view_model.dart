@@ -8,10 +8,18 @@ import '../services/openalex_service.dart';
 class KeywordsViewModel extends ChangeNotifier {
   final OpenAlexService _service = OpenAlexService.instance;
 
-  List<MapEntry<String, int>> keywords = [];
+  /// Full, unsliced result from the last search. [keywords] is DERIVED from
+  /// this, so the Remote Config limit is applied live on every read — a Profile
+  /// Refresh re-slices the list without needing a new search or an app restart.
+  List<MapEntry<String, int>> _all = [];
+
   bool isLoading = false;
   String errorMessage = '';
   String currentTopic = '';
+
+  /// Keywords to display, limited by the current `max_keywords_displayed`.
+  List<MapEntry<String, int>> get keywords =>
+      _all.take(RemoteConfigService.instance.maxKeywords).toList();
 
   int get maxCount => keywords.isEmpty ? 1 : keywords.first.value;
 
@@ -28,12 +36,12 @@ class KeywordsViewModel extends ChangeNotifier {
       final all = await _service.fetchTopKeywords(cleaned);
       // A newer search superseded this one — drop the stale response.
       if (cleaned != currentTopic) return;
-      final limit = RemoteConfigService.instance.maxKeywords;
-      keywords = all.take(limit).toList();
+      // Keep the FULL list; the `keywords` getter applies the live RC limit.
+      _all = all;
     } catch (e) {
       if (cleaned != currentTopic) return;
       errorMessage = 'Không tải được dữ liệu từ khóa: $e';
-      keywords = [];
+      _all = [];
     }
 
     if (cleaned != currentTopic) return;
@@ -42,10 +50,14 @@ class KeywordsViewModel extends ChangeNotifier {
   }
 
   void reset() {
-    keywords = [];
+    _all = [];
     errorMessage = '';
     currentTopic = '';
     isLoading = false;
     notifyListeners();
   }
+
+  /// Re-emits the (re-sliced) list after `max_keywords_displayed` changed, so
+  /// the Keywords tab reflects a new limit without a re-search or app restart.
+  void reapplyLimit() => notifyListeners();
 }

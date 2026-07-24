@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
 
@@ -12,7 +13,11 @@ enum RemoteConfigRefreshResult {
   /// Fetch thành công nhưng không có gì mới (giá trị hiện tại đã là mới nhất).
   noChange,
 
-  /// Firebase chưa sẵn sàng, hoặc fetch thất bại (mạng / throttle / exception).
+  /// Bị Firebase giới hạn tần suất (server-side throttle). Client dùng
+  /// [Duration.zero] KHÔNG chặn được throttle phía server khi bấm quá nhanh.
+  throttled,
+
+  /// Firebase chưa sẵn sàng, hoặc fetch thất bại (mạng / exception khác).
   failed,
 }
 
@@ -34,6 +39,7 @@ class RemoteConfigService {
   static const int defaultMaxKeywords = 20;
 
   bool _initialized = false;
+  bool _configured = false;
 
   FirebaseRemoteConfig? get _rc =>
       firebaseReady ? FirebaseRemoteConfig.instance : null;
@@ -43,27 +49,36 @@ class RemoteConfigService {
   /// TODO(prod): sau khi nộp bài, đổi về `Duration(hours: 1)` cho production để
   /// không gọi fetch quá thường xuyên.
   ///
-  /// Trong giai đoạn phát triển/demo dùng [Duration.zero]: mỗi lần Refresh đều
-  /// gọi server thật, KHÔNG bị trả về cache. Mặc định của SDK là 12 giờ (và bản
-  /// cũ hard-code 1 giờ) — đó chính là lý do bấm Refresh mà giá trị không đổi:
-  /// fetch bị throttle nên chỉ đọc lại cache.
+  /// Dùng [Duration.zero] cho MỌI bản build (kể cả release) trong giai đoạn
+  /// demo — KHÔNG gate theo kDebugMode. Nếu chỉ đặt zero cho debug thì bản
+  /// release rơi về mặc định 12 giờ của SDK ⇒ bấm Refresh luôn trả cache, giá
+  /// trị không đổi. Lưu ý: zero chỉ bỏ throttle phía CLIENT; server vẫn có thể
+  /// throttle nếu bấm quá nhanh (xử lý riêng trong [refresh]).
   static const Duration _minimumFetchInterval = Duration.zero;
+
+  /// Áp settings ([Duration.zero]) + defaults MỘT lần, idempotent. Gọi cả trong
+  /// [init] lẫn [refresh] để dù [init] có bị bỏ qua thì Refresh vẫn luôn fetch
+  /// server thật thay vì đọc cache 12 giờ.
+  Future<void> _ensureConfigured(FirebaseRemoteConfig rc) async {
+    if (_configured) return;
+    await rc.setConfigSettings(RemoteConfigSettings(
+      fetchTimeout: const Duration(seconds: 10),
+      minimumFetchInterval: _minimumFetchInterval,
+    ));
+    // Defaults (best practice): app vẫn có 10/20 khi server trống hoặc offline.
+    // fetchAndActivate() sẽ GHI ĐÈ chúng khi server có giá trị.
+    await rc.setDefaults(const {
+      keyMaxJournals: defaultMaxJournals,
+      keyMaxKeywords: defaultMaxKeywords,
+    });
+    _configured = true;
+  }
 
   Future<void> init() async {
     if (!firebaseReady || _initialized) return;
     try {
       final rc = _rc!;
-      await rc.setConfigSettings(RemoteConfigSettings(
-        fetchTimeout: const Duration(seconds: 10),
-        minimumFetchInterval: _minimumFetchInterval,
-      ));
-      // Defaults (best practice): app vẫn có 10/20 khi server trống hoặc offline.
-      // Đây là lý do app "trông có vẻ chạy" dù Console từng rỗng — nó chạy bằng
-      // các default này. fetchAndActivate() sẽ GHI ĐÈ chúng khi server có giá trị.
-      await rc.setDefaults(const {
-        keyMaxJournals: defaultMaxJournals,
-        keyMaxKeywords: defaultMaxKeywords,
-      });
+      await _ensureConfigured(rc);
       final activated = await rc.fetchAndActivate();
       _initialized = true;
       debugPrint('✅ Remote Config init: activated=$activated, '
@@ -77,7 +92,7 @@ class RemoteConfigService {
   /// Force a refresh (used by the Profile "Refresh" button).
   ///
   /// Trả về [RemoteConfigRefreshResult] để UI báo cho người dùng biết fetch
-  /// thành công / không đổi / thất bại — không nuốt lỗi im lặng nữa.
+  /// thành công / không đổi / bị throttle / thất bại — không nuốt lỗi im lặng.
   Future<RemoteConfigRefreshResult> refresh() async {
     final rc = _rc;
     if (rc == null) {
@@ -85,6 +100,9 @@ class RemoteConfigService {
       return RemoteConfigRefreshResult.failed;
     }
     try {
+      // Đảm bảo settings Duration.zero đã áp trước khi fetch (kể cả khi init bị
+      // bỏ qua) ⇒ Refresh luôn hỏi server, không trả cache.
+      await _ensureConfigured(rc);
       final activated = await rc.fetchAndActivate();
       debugPrint('🔄 Remote Config refresh: activated=$activated, '
           'status=${rc.lastFetchStatus}, time=${rc.lastFetchTime}, '
@@ -92,6 +110,26 @@ class RemoteConfigService {
       return activated
           ? RemoteConfigRefreshResult.activated
           : RemoteConfigRefreshResult.noChange;
+    } on FirebaseException catch (e) {
+      // Remote Config báo throttle phía SERVER qua FirebaseException code
+      // 'throttled' (hoặc lastFetchStatus == throttle). Client Duration.zero
+      // KHÔNG chặn được throttle server khi bấm quá nhanh.
+      final throttled = e.code == 'throttled' ||
+          rc.lastFetchStatus == RemoteConfigFetchStatus.throttle;
+      debugPrint('${throttled ? "⏳ throttled" : "❌ RC error"}: '
+          'code=${e.code} msg=${e.message} '
+          '(status=${rc.lastFetchStatus}, time=${rc.lastFetchTime})');
+      if (throttled) {
+        // Vẫn activate giá trị fetch gần nhất để UI phản ánh dữ liệu mới nhất
+        // đang có, và báo người dùng thử lại sau thay vì im lặng.
+        try {
+          await rc.activate();
+        } catch (_) {
+          // activate có thể ném nếu chưa từng fetch — bỏ qua, giữ giá trị hiện tại.
+        }
+        return RemoteConfigRefreshResult.throttled;
+      }
+      return RemoteConfigRefreshResult.failed;
     } catch (e) {
       debugPrint('❌ Remote Config refresh error: $e '
           '(status=${rc.lastFetchStatus}, time=${rc.lastFetchTime})');
