@@ -91,7 +91,14 @@ export function StoragePage() {
     void load(path);
   }, [load, path]);
 
-  const files = listing?.files ?? [];
+  const files = useMemo(() => {
+    const raw = listing?.files ?? [];
+    return [...raw].sort((a, b) => {
+      const ta = a.updated?.getTime() ?? 0;
+      const tb = b.updated?.getTime() ?? 0;
+      return tb - ta;
+    });
+  }, [listing]);
   const folders = listing?.folders ?? [];
 
   const selectedFiles = useMemo(
