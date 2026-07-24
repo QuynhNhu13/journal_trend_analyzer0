@@ -3,8 +3,7 @@ import type { ReactNode } from 'react';
 import { Icon, type IconName } from './Icon';
 
 /**
- * Icon-in-a-rounded-square + title row — the web twin of the Flutter app's
- * SectionTitle: an accent icon on a tinted square next to a bold heading.
+ * Section heading: a pink gradient icon chip next to a bold title.
  */
 export function SectionTitle({
   title,
@@ -17,11 +16,12 @@ export function SectionTitle({
 }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="grid h-9 w-9 place-items-center rounded-md bg-brand-soft text-brand">
-        <Icon name={icon} className="h-[18px] w-[18px]" />
+      <span className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-pink-100 to-rose-50 text-brand shadow-xs">
+        <Icon name={icon} className="h-4.5 w-4.5" />
       </span>
-      <h2 className="flex-1 text-base font-bold text-ink">{title}</h2>
+      <h2 className="flex-1 text-base font-extrabold text-ink tracking-tight">{title}</h2>
       {trailing}
     </div>
   );
 }
+

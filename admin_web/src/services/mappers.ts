@@ -3,6 +3,7 @@ import type { DocumentData } from 'firebase/firestore';
 import type {
   AdminLog,
   AppUser,
+  FcmFailure,
   NotificationRecord,
   NotificationTargetType,
   ReportDoc,
@@ -49,16 +50,18 @@ export function mapReport(id: string, data: DocumentData): ReportDoc {
 
 /** Maps a Firestore `notifications/{id}` document into a NotificationRecord. */
 export function mapNotification(id: string, data: DocumentData): NotificationRecord {
-  const targetType = (asStringOrNull(data.targetType) ?? 'all') as NotificationTargetType;
+  const targetType = (asStringOrNull(data.targetType) ?? 'topic') as NotificationTargetType;
   return {
     id,
     title: asStringOrNull(data.title) ?? '—',
     body: asStringOrNull(data.body) ?? '',
+    imageUrl: asStringOrNull(data.imageUrl),
     targetType,
     targetLabel: asStringOrNull(data.targetLabel) ?? '—',
     recipients: asNumber(data.recipients),
     successCount: asNumber(data.successCount),
     failureCount: asNumber(data.failureCount),
+    failures: Array.isArray(data.failures) ? (data.failures as FcmFailure[]) : [],
     data: asRecord(data.data),
     sentByEmail: asStringOrNull(data.sentByEmail),
     createdAt: toDateOrNull(data.createdAt),

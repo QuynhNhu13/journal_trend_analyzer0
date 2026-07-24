@@ -9,10 +9,26 @@ import { strings } from '../../constants/strings';
  * Application frame: fixed sidebar on large screens, a slide-in drawer on small
  * ones, and a topbar above the routed page content.
  */
+const COLLAPSE_KEY = 'admin.sidebarCollapsed';
+
 export function AppShell() {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(
+    () => typeof localStorage !== 'undefined' && localStorage.getItem(COLLAPSE_KEY) === '1',
+  );
   const drawerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
+
+  const toggleCollapsed = () =>
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(COLLAPSE_KEY, next ? '1' : '0');
+      } catch {
+        // Ignore storage failures (private mode) — collapse still works in-session.
+      }
+      return next;
+    });
 
   const openDrawer = () => {
     // Remember the trigger so focus can be restored to it when the drawer closes.
@@ -66,9 +82,13 @@ export function AppShell() {
   return (
     <div className="min-h-screen bg-canvas lg:flex">
       {/* Desktop sidebar */}
-      <aside className="hidden w-64 shrink-0 border-r border-hairline lg:block">
+      <aside
+        className={`hidden shrink-0 border-r border-hairline transition-[width] duration-200 lg:block ${
+          collapsed ? 'w-20' : 'w-64'
+        }`}
+      >
         <div className="sticky top-0 h-screen">
-          <Sidebar />
+          <Sidebar collapsed={collapsed} onToggleCollapse={toggleCollapsed} />
         </div>
       </aside>
 

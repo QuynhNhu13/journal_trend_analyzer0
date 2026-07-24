@@ -18,6 +18,8 @@ export type IconName =
   | 'lock'
   | 'spark'
   | 'chevronRight'
+  | 'chevronLeft'
+  | 'sidebar'
   | 'inbox'
   | 'alert'
   | 'external'
@@ -33,7 +35,12 @@ export type IconName =
   | 'send'
   | 'refresh'
   | 'unlock'
-  | 'home';
+  | 'home'
+  | 'database'
+  | 'harddrive'
+  | 'key'
+  | 'history'
+  | 'more';
 
 type IconProps = SVGProps<SVGSVGElement> & { name: IconName };
 
@@ -140,6 +147,13 @@ const PATHS: Record<IconName, JSX.Element> = {
     </>
   ),
   chevronRight: <path d="M9 6l6 6-6 6" />,
+  chevronLeft: <path d="M15 6l-6 6 6 6" />,
+  sidebar: (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <line x1="9" y1="4" x2="9" y2="20" />
+    </>
+  ),
   inbox: (
     <>
       <path d="M4 13l2.5-8h11L20 13v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Z" />
@@ -236,6 +250,43 @@ const PATHS: Record<IconName, JSX.Element> = {
     <>
       <path d="M4 11l8-7 8 7" />
       <path d="M6 10v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-9" />
+    </>
+  ),
+  database: (
+    <>
+      <ellipse cx="12" cy="6" rx="7" ry="3" />
+      <path d="M5 6v6c0 1.66 3.13 3 7 3s7-1.34 7-3V6" />
+      <path d="M5 12v6c0 1.66 3.13 3 7 3s7-1.34 7-3v-6" />
+    </>
+  ),
+  harddrive: (
+    <>
+      <rect x="3" y="12" width="18" height="7" rx="2" />
+      <path d="M5 12l2.5-6h9L19 12" />
+      <line x1="7" y1="15.5" x2="7" y2="15.5" />
+      <line x1="11" y1="15.5" x2="16" y2="15.5" />
+    </>
+  ),
+  key: (
+    <>
+      <circle cx="8" cy="8" r="4" />
+      <path d="M11 11l7 7" />
+      <path d="M16 16l2-2" />
+      <path d="M18.5 18.5l1.5-1.5" />
+    </>
+  ),
+  history: (
+    <>
+      <path d="M4 12a8 8 0 1 1 3 6.2" />
+      <path d="M4 20v-5h5" />
+      <path d="M12 8v4l3 2" />
+    </>
+  ),
+  more: (
+    <>
+      <circle cx="12" cy="5" r="1.4" />
+      <circle cx="12" cy="12" r="1.4" />
+      <circle cx="12" cy="19" r="1.4" />
     </>
   ),
 };

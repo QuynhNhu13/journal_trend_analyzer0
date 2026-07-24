@@ -23,7 +23,7 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
-/** Provides a transient toast at the bottom of the screen. */
+/** Compact auto-dismissing toast anchored to the top-right. */
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<ToastState | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -42,16 +42,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={value}>
       {children}
       {toast ? (
-        <div className="pointer-events-none fixed inset-x-0 bottom-6 z-[60] flex justify-center px-4">
+        <div className="pointer-events-none fixed right-4 top-4 z-[60] flex justify-end">
           <div
             role="status"
-            className={`pointer-events-auto flex items-center gap-2.5 rounded-md px-4 py-3 text-sm font-semibold text-white shadow-soft ${
-              toast.tone === 'error' ? 'bg-danger' : 'bg-ink'
-            }`}
+            className="pointer-events-auto flex items-center gap-2.5 rounded-lg border border-hairline bg-card px-3.5 py-2.5 text-sm font-medium text-ink shadow-pop"
           >
             <Icon
-              name={toast.tone === 'error' ? 'alert' : 'shield'}
-              className="h-[18px] w-[18px]"
+              name={toast.tone === 'error' ? 'alert' : 'check'}
+              className={`h-4 w-4 shrink-0 ${toast.tone === 'error' ? 'text-danger' : 'text-success'}`}
             />
             {toast.message}
           </div>

@@ -7,8 +7,11 @@ import { Icon } from '../components/ui/Icon';
 import { Modal } from '../components/ui/Modal';
 import { Spinner } from '../components/ui/Spinner';
 import { TableSkeleton } from '../components/ui/Skeleton';
+import { RowActions } from '../components/ui/RowActions';
+import { Pagination, usePagination } from '../components/ui/Pagination';
 import { EmptyState, ErrorState } from '../components/ui/StateView';
 import { useToast } from '../components/ui/Toast';
+import { functionErrorMessage } from '../services/functionsService';
 import { strings } from '../constants/strings';
 import { formatBytes, formatDateTime } from '../lib/format';
 import {
@@ -17,7 +20,6 @@ import {
   deleteFile,
   deleteFiles,
   listFolder,
-  renameFile,
   uploadFile,
   validateFile,
   type FolderListing,
@@ -38,45 +40,48 @@ interface Crumb {
 }
 
 function crumbsFor(path: string): Crumb[] {
-  const segments = path.replace(/\/$/, '').split('/');
-  return segments.map((label, i) => ({
-    label: i === 0 ? strings.files.root : label,
-    path: `${segments.slice(0, i + 1).join('/')}/`,
-  }));
+  // Breadcrumb is anchored at ROOT_PATH so navigation never goes above it.
+  const crumbs: Crumb[] = [{ label: strings.files.root, path: ROOT_PATH }];
+  const rel = path.startsWith(ROOT_PATH) ? path.slice(ROOT_PATH.length) : path;
+  let acc = ROOT_PATH;
+  for (const part of rel.split('/').filter(Boolean)) {
+    acc += `${part}/`;
+    crumbs.push({ label: part, path: acc });
+  }
+  return crumbs;
 }
 
 type Dialog =
   | { kind: 'delete-one'; file: StorageFile }
   | { kind: 'delete-many' }
-  | { kind: 'rename'; file: StorageFile }
   | { kind: 'new-folder' }
   | null;
 
-export function ReportsPage() {
+export function StoragePage() {
   const { showToast } = useToast();
   const fileInput = useRef<HTMLInputElement>(null);
 
   const [path, setPath] = useState(ROOT_PATH);
   const [listing, setListing] = useState<FolderListing | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [uploading, setUploading] = useState<{ name: string; percent: number } | null>(null);
   const [dragging, setDragging] = useState(false);
 
   const [dialog, setDialog] = useState<Dialog>(null);
   const [busy, setBusy] = useState(false);
-  const [renameValue, setRenameValue] = useState('');
   const [folderValue, setFolderValue] = useState('');
 
   const load = useCallback(async (target: string) => {
     setLoading(true);
-    setError(false);
+    setError(null);
     setSelected(new Set());
     try {
       setListing(await listFolder(target));
-    } catch {
-      setError(true);
+    } catch (err) {
+      console.error('[Storage] listFolder failed:', err);
+      setError(functionErrorMessage(err, strings.files.errorMessage));
     } finally {
       setLoading(false);
     }
@@ -102,6 +107,9 @@ export function ReportsPage() {
       return next;
     });
   };
+
+  // Folders stay pinned at the top as navigation; only files are paginated.
+  const filesPager = usePagination(files, 15);
 
   const allChecked = files.length > 0 && selected.size === files.length;
   const toggleAll = () => {
@@ -139,7 +147,6 @@ export function ReportsPage() {
   const closeDialog = () => {
     if (busy) return;
     setDialog(null);
-    setRenameValue('');
     setFolderValue('');
   };
 
@@ -180,23 +187,6 @@ export function ReportsPage() {
     }
   };
 
-  const runRename = async (file: StorageFile) => {
-    const name = renameValue.trim();
-    if (!name) return;
-    setBusy(true);
-    try {
-      await renameFile(file, name, path);
-      showToast(strings.files.renamedToast);
-      setDialog(null);
-      setRenameValue('');
-      await load(path);
-    } catch {
-      showToast(strings.files.renameError, 'error');
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const runCreateFolder = async () => {
     const name = folderValue.trim();
     if (!/^[A-Za-z0-9_-]+$/.test(name)) {
@@ -219,7 +209,7 @@ export function ReportsPage() {
 
   return (
     <div>
-      <PageHeader title={strings.pages.reports.title} subtitle={strings.pages.reports.subtitle} />
+      <PageHeader title={strings.pages.storage.title} subtitle={strings.pages.storage.subtitle} />
 
       <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-8 sm:py-8">
         <div className="grid gap-4 sm:grid-cols-2">
@@ -295,7 +285,7 @@ export function ReportsPage() {
 
           {/* Upload progress */}
           {uploading ? (
-            <div className="border-b border-hairline bg-brand-soft/40 px-4 py-3">
+            <div className="border-b border-hairline bg-subtle px-4 py-3">
               <div className="mb-1 flex items-center justify-between text-xs font-semibold text-body">
                 <span className="truncate">
                   {strings.files.uploading} {uploading.name}
@@ -334,7 +324,7 @@ export function ReportsPage() {
           {loading ? (
             <TableSkeleton rows={5} columns={4} />
           ) : error ? (
-            <ErrorState message={strings.files.errorMessage} onRetry={() => void load(path)} />
+            <ErrorState message={error} onRetry={() => void load(path)} />
           ) : folders.length === 0 && files.length === 0 ? (
             <EmptyState
               icon="folder"
@@ -345,7 +335,7 @@ export function ReportsPage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[760px] border-collapse text-left">
                 <thead>
-                  <tr className="border-b border-hairline text-xs font-bold uppercase tracking-wide text-muted">
+                  <tr className="border-b border-hairline bg-subtle text-label uppercase text-muted">
                     <th className="w-10 px-4 py-3">
                       <input
                         type="checkbox"
@@ -367,12 +357,12 @@ export function ReportsPage() {
                     <tr
                       key={f.path}
                       onClick={() => setPath(f.path)}
-                      className="cursor-pointer transition hover:bg-brand-soft/30"
+                      className="cursor-pointer transition hover:bg-subtle"
                     >
                       <td className="px-4 py-3" />
                       <td className="px-4 py-3" colSpan={5}>
                         <div className="flex items-center gap-2.5">
-                          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-brand-soft text-brand">
+                          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-subtle text-muted">
                             <Icon name="folder" className="h-[18px] w-[18px]" />
                           </span>
                           <span className="text-sm font-semibold text-ink">{f.name}</span>
@@ -381,8 +371,8 @@ export function ReportsPage() {
                     </tr>
                   ))}
 
-                  {files.map((file) => (
-                    <tr key={file.fullPath}>
+                  {filesPager.pageItems.map((file) => (
+                    <tr key={file.fullPath} className="transition hover:bg-subtle">
                       <td className="px-4 py-3">
                         <input
                           type="checkbox"
@@ -394,7 +384,7 @@ export function ReportsPage() {
                       </td>
                       <td className="max-w-[240px] px-4 py-3">
                         <div className="flex items-center gap-2.5">
-                          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-brand-soft text-brand">
+                          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-subtle text-muted">
                             <Icon name="file" className="h-4 w-4" />
                           </span>
                           <span className="truncate text-sm font-semibold text-ink">
@@ -402,7 +392,7 @@ export function ReportsPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-muted">
+                      <td className="tnums whitespace-nowrap px-4 py-3 text-right text-sm text-muted">
                         {formatBytes(file.sizeBytes)}
                       </td>
                       <td className="px-4 py-3 text-sm text-muted">{typeLabel(file.contentType)}</td>
@@ -428,39 +418,34 @@ export function ReportsPage() {
                           >
                             <Icon name="download" className="h-[18px] w-[18px]" />
                           </a>
-                          <button
-                            type="button"
-                            onClick={() => void copyLink(file.downloadUrl)}
-                            title={strings.files.copy}
-                            className="grid h-8 w-8 place-items-center rounded-md text-muted hover:bg-canvas hover:text-brand"
-                          >
-                            <Icon name="copy" className="h-[18px] w-[18px]" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setRenameValue(file.name);
-                              setDialog({ kind: 'rename', file });
-                            }}
-                            title={strings.files.rename}
-                            className="grid h-8 w-8 place-items-center rounded-md text-muted hover:bg-canvas hover:text-brand"
-                          >
-                            <Icon name="pencil" className="h-[18px] w-[18px]" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setDialog({ kind: 'delete-one', file })}
-                            title={strings.common.delete}
-                            className="grid h-8 w-8 place-items-center rounded-md text-muted hover:bg-danger/10 hover:text-danger"
-                          >
-                            <Icon name="trash" className="h-[18px] w-[18px]" />
-                          </button>
+                          <RowActions
+                            actions={[
+                              {
+                                label: strings.files.copy,
+                                icon: 'copy',
+                                onClick: () => void copyLink(file.downloadUrl),
+                              },
+                              {
+                                label: strings.common.delete,
+                                icon: 'trash',
+                                danger: true,
+                                onClick: () => setDialog({ kind: 'delete-one', file }),
+                              },
+                            ]}
+                          />
                         </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              <Pagination
+                page={filesPager.page}
+                totalPages={filesPager.totalPages}
+                total={files.length}
+                pageSize={filesPager.pageSize}
+                onPageChange={filesPager.setPage}
+              />
             </div>
           )}
         </Card>
@@ -489,44 +474,6 @@ export function ReportsPage() {
           onCancel={closeDialog}
           onConfirm={() => void runDeleteMany()}
         />
-      ) : null}
-
-      {dialog?.kind === 'rename' ? (
-        <Modal
-          title={strings.files.renameTitle}
-          onClose={closeDialog}
-          footer={
-            <>
-              <button
-                type="button"
-                onClick={closeDialog}
-                disabled={busy}
-                className="rounded-md border border-hairline px-4 py-2 text-sm font-semibold text-body transition hover:bg-canvas disabled:opacity-60"
-              >
-                {strings.common.cancel}
-              </button>
-              <button
-                type="button"
-                onClick={() => void runRename(dialog.file)}
-                disabled={busy || !renameValue.trim()}
-                className="flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-bold text-white transition hover:bg-brand-bright disabled:opacity-60"
-              >
-                {busy ? <Spinner size={16} className="border-white" /> : null}
-                {strings.files.rename}
-              </button>
-            </>
-          }
-        >
-          <label className="mb-1 block text-xs font-bold text-muted">
-            {strings.files.renameLabel}
-          </label>
-          <input
-            type="text"
-            value={renameValue}
-            onChange={(e) => setRenameValue(e.target.value)}
-            className="w-full rounded-md border border-hairline bg-canvas px-3 py-2.5 text-sm text-ink outline-none focus:border-brand focus:bg-card"
-          />
-        </Modal>
       ) : null}
 
       {dialog?.kind === 'new-folder' ? (

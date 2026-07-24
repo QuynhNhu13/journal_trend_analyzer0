@@ -30,30 +30,30 @@ function MonitoringCard({ links }: { links: MonitorLink[] }) {
   return (
     <Card>
       <SectionTitle icon="alert" title={strings.overview.monitoringTitle} />
-      <p className="mt-2 pl-12 text-sm text-muted">{strings.overview.monitoringNote}</p>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+      <p className="mt-2 pl-11 text-xs font-medium text-muted">{strings.overview.monitoringNote}</p>
+      <div className="mt-5 grid gap-4 sm:grid-cols-2">
         {links.map((link) => (
           <a
             key={link.href}
             href={link.href}
             target="_blank"
             rel="noreferrer"
-            className="group flex items-start gap-3 rounded-md border border-hairline p-4 transition hover:border-brand hover:shadow-soft"
+            className="group flex items-start gap-3.5 rounded-2xl border border-pink-100/90 bg-white p-4.5 transition-all duration-200 hover:border-pink-300 hover:bg-brand-tint/30 hover:shadow-soft"
           >
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-brand-soft text-brand">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-pink-50 to-rose-100/60 text-brand shadow-xs transition-transform group-hover:scale-105">
               <Icon name="external" className="h-5 w-5" />
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
-                <p className="font-bold text-ink">{link.title}</p>
+                <p className="font-extrabold text-ink group-hover:text-brand transition-colors text-sm">{link.title}</p>
                 <Icon
                   name="external"
                   className="h-4 w-4 text-faint transition group-hover:text-brand"
                 />
               </div>
-              <p className="mt-0.5 text-sm text-muted">{link.description}</p>
-              <p className="mt-2 text-xs font-semibold text-brand">
-                {strings.overview.openConsole}
+              <p className="mt-1 text-xs text-muted leading-relaxed">{link.description}</p>
+              <p className="mt-2 text-xs font-bold text-brand group-hover:underline">
+                {strings.overview.openConsole} &rarr;
               </p>
             </div>
           </a>
@@ -234,7 +234,7 @@ export function DashboardPage() {
                             to="/reports"
                             className="flex items-center gap-3 py-2.5 transition hover:opacity-80"
                           >
-                            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-brand-soft text-brand">
+                            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-subtle text-muted">
                               <Icon name="file" className="h-[18px] w-[18px]" />
                             </span>
                             <div className="min-w-0 flex-1">

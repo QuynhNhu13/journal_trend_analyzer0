@@ -8,15 +8,18 @@ import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
 import { Spinner } from '../components/ui/Spinner';
 import { TableSkeleton } from '../components/ui/Skeleton';
+import { Pagination, usePagination } from '../components/ui/Pagination';
 import { EmptyState, ErrorState } from '../components/ui/StateView';
 import { useToast } from '../components/ui/Toast';
 import { strings } from '../constants/strings';
 import { formatDateTime } from '../lib/format';
-import type { RcChange, RcParam, RcTemplateView, RcValueType } from '../types/models';
+import type { RcChange, RcParam, RcTemplateView, RcValueType, RcVersion } from '../types/models';
 import {
   functionErrorMessage,
   getRemoteConfigTemplate,
+  listRemoteConfigVersions,
   publishRemoteConfig,
+  rollbackRemoteConfig,
 } from '../services/functionsService';
 
 interface NewParam {
@@ -48,6 +51,17 @@ function ValueEditor({
       </select>
     );
   }
+  if (valueType === 'JSON') {
+    return (
+      <textarea
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value)}
+        rows={2}
+        className={`${base} font-mono`}
+      />
+    );
+  }
   return (
     <input
       type={valueType === 'NUMBER' ? 'number' : 'text'}
@@ -64,7 +78,7 @@ export function ConfigPage() {
 
   const [template, setTemplate] = useState<RcTemplateView | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [values, setValues] = useState<Record<string, string>>({});
   const [deleted, setDeleted] = useState<Set<string>>(new Set());
@@ -73,6 +87,12 @@ export function ConfigPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [publishing, setPublishing] = useState(false);
+
+  const [tab, setTab] = useState<'params' | 'history'>('params');
+  const [versions, setVersions] = useState<RcVersion[] | null>(null);
+  const [versionsError, setVersionsError] = useState<string | null>(null);
+  const [rollbackTarget, setRollbackTarget] = useState<RcVersion | null>(null);
+  const [rollingBack, setRollingBack] = useState(false);
 
   const applyTemplate = useCallback((view: RcTemplateView) => {
     setTemplate(view);
@@ -83,11 +103,12 @@ export function ConfigPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError(false);
+    setError(null);
     try {
       applyTemplate(await getRemoteConfigTemplate({}));
-    } catch {
-      setError(true);
+    } catch (err) {
+      console.error('[Config] getRemoteConfigTemplate failed:', err);
+      setError(functionErrorMessage(err, strings.config.loadError));
     } finally {
       setLoading(false);
     }
@@ -97,7 +118,39 @@ export function ConfigPage() {
     void load();
   }, [load]);
 
+  const loadVersions = useCallback(async () => {
+    setVersionsError(null);
+    try {
+      const result = await listRemoteConfigVersions({});
+      setVersions(result.versions);
+    } catch (err) {
+      console.error('[Config] listRemoteConfigVersions failed:', err);
+      setVersionsError(functionErrorMessage(err, strings.config.versionsError));
+      setVersions([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (tab === 'history' && versions === null) void loadVersions();
+  }, [tab, versions, loadVersions]);
+
+  const handleRollback = async (version: RcVersion) => {
+    setRollingBack(true);
+    try {
+      applyTemplate(await rollbackRemoteConfig({ versionNumber: Number(version.versionNumber) }));
+      showToast(strings.config.rolledBackToast);
+      setRollbackTarget(null);
+      setVersions(null);
+      setTab('params');
+    } catch (err) {
+      showToast(functionErrorMessage(err, strings.config.rollbackError), 'error');
+    } finally {
+      setRollingBack(false);
+    }
+  };
+
   const params = template?.parameters ?? [];
+  const versionsPager = usePagination(versions ?? [], 10);
 
   const changes = useMemo<RcChange[]>(() => {
     const out: RcChange[] = [];
@@ -159,6 +212,29 @@ export function ConfigPage() {
       />
 
       <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-8 sm:py-8">
+        {/* Tabs */}
+        <div className="flex w-fit gap-1 rounded-md border border-hairline bg-card p-1">
+          {(
+            [
+              ['params', strings.config.tabParams],
+              ['history', strings.config.tabHistory],
+            ] as const
+          ).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setTab(key)}
+              className={`rounded px-4 py-1.5 text-sm font-semibold transition ${
+                tab === key ? 'bg-brand-soft text-brand' : 'text-muted hover:text-ink'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {tab === 'params' ? (
+          <>
         {/* Meta + actions */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-sm text-muted">
@@ -196,8 +272,8 @@ export function ConfigPage() {
           </div>
         </div>
 
-        <div className="flex items-start gap-2 rounded-md bg-brand-soft/60 px-4 py-3 text-sm text-body">
-          <Icon name="alert" className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+        <div className="flex items-start gap-2 rounded-md border border-hairline bg-subtle px-4 py-3 text-sm text-body">
+          <Icon name="alert" className="mt-0.5 h-4 w-4 shrink-0 text-muted" />
           {strings.config.effectNote}
         </div>
 
@@ -209,7 +285,7 @@ export function ConfigPage() {
           {loading ? (
             <TableSkeleton rows={4} columns={4} />
           ) : error ? (
-            <ErrorState message={strings.config.loadError} onRetry={() => void load()} />
+            <ErrorState message={error} onRetry={() => void load()} />
           ) : params.length === 0 && added.length === 0 ? (
             <EmptyState
               icon="sliders"
@@ -220,11 +296,10 @@ export function ConfigPage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[760px] border-collapse text-left">
                 <thead>
-                  <tr className="border-b border-hairline text-xs font-bold uppercase tracking-wide text-muted">
+                  <tr className="border-b border-hairline bg-subtle text-label uppercase text-muted">
                     <th className="px-4 py-3">{strings.config.col.name}</th>
                     <th className="px-4 py-3">{strings.config.col.type}</th>
                     <th className="w-56 px-4 py-3">{strings.config.col.value}</th>
-                    <th className="px-4 py-3">{strings.config.col.description}</th>
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>
@@ -241,6 +316,9 @@ export function ConfigPage() {
                           >
                             {p.name}
                           </span>
+                          {p.group ? (
+                            <p className="text-xs text-muted">{strings.config.inGroup(p.group)}</p>
+                          ) : null}
                           {isDeleted ? (
                             <p className="text-xs text-danger">{strings.config.markedDelete}</p>
                           ) : null}
@@ -256,7 +334,6 @@ export function ConfigPage() {
                             onChange={(v) => setValues((prev) => ({ ...prev, [p.name]: v }))}
                           />
                         </td>
-                        <td className="px-4 py-3 text-sm text-muted">{p.description || '—'}</td>
                         <td className="px-4 py-3 text-right">
                           <button
                             type="button"
@@ -283,7 +360,7 @@ export function ConfigPage() {
                         <p className="text-xs text-emerald">{strings.config.added}</p>
                       </td>
                       <td className="px-4 py-3">
-                        <Badge tone="emerald">{a.valueType}</Badge>
+                        <Badge tone="success">{a.valueType}</Badge>
                       </td>
                       <td className="px-4 py-3">
                         <ValueEditor
@@ -294,7 +371,6 @@ export function ConfigPage() {
                           }
                         />
                       </td>
-                      <td className="px-4 py-3 text-sm text-muted">{a.description || '—'}</td>
                       <td className="px-4 py-3 text-right">
                         <button
                           type="button"
@@ -327,7 +403,110 @@ export function ConfigPage() {
             </button>
           </div>
         </Card>
+          </>
+        ) : (
+          <Card className="!p-0">
+            <div className="flex items-center justify-between border-b border-hairline p-4">
+              <SectionTitle icon="history" title={strings.config.tabHistory} />
+              <button
+                type="button"
+                onClick={() => void loadVersions()}
+                className="grid h-8 w-8 place-items-center rounded-md text-muted hover:bg-canvas hover:text-brand"
+                title={strings.config.reload}
+              >
+                <Icon name="refresh" className="h-4 w-4" />
+              </button>
+            </div>
+            {versions === null ? (
+              <TableSkeleton rows={5} columns={4} />
+            ) : versionsError ? (
+              <ErrorState message={versionsError ?? strings.config.versionsError} onRetry={() => void loadVersions()} />
+            ) : versions.length === 0 ? (
+              <EmptyState icon="history" title={strings.config.versionsEmpty} />
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[640px] border-collapse text-left">
+                  <thead>
+                    <tr className="border-b border-hairline bg-subtle text-label uppercase text-muted">
+                      <th className="px-4 py-3">{strings.config.versionCol.version}</th>
+                      <th className="px-4 py-3">{strings.config.versionCol.type}</th>
+                      <th className="px-4 py-3">{strings.config.versionCol.by}</th>
+                      <th className="px-4 py-3">{strings.config.versionCol.when}</th>
+                      <th className="px-4 py-3 text-right" />
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-hairline">
+                    {versionsPager.pageItems.map((v) => {
+                      const isLatest = v.versionNumber === versions[0]?.versionNumber;
+                      return (
+                        <tr key={v.versionNumber}>
+                          <td className="px-4 py-3">
+                            <Badge tone={isLatest ? 'brand' : 'neutral'}>#{v.versionNumber}</Badge>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-muted">{v.updateType ?? '—'}</td>
+                          <td className="px-4 py-3 text-sm text-body">{v.updateUserEmail ?? '—'}</td>
+                          <td className="whitespace-nowrap px-4 py-3 text-sm text-muted">
+                            {v.updateTime ? formatDateTime(new Date(v.updateTime)) : '—'}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              type="button"
+                              onClick={() => setRollbackTarget(v)}
+                              disabled={isLatest}
+                              className="rounded-md border border-hairline px-3 py-1.5 text-xs font-semibold text-body transition hover:border-brand hover:text-brand disabled:opacity-40"
+                            >
+                              {strings.config.rollback}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                <Pagination
+                  page={versionsPager.page}
+                  totalPages={versionsPager.totalPages}
+                  total={versions.length}
+                  pageSize={versionsPager.pageSize}
+                  onPageChange={versionsPager.setPage}
+                />
+              </div>
+            )}
+          </Card>
+        )}
       </div>
+
+      {rollbackTarget ? (
+        <Modal
+          title={strings.config.rollbackTitle}
+          onClose={() => (rollingBack ? undefined : setRollbackTarget(null))}
+          footer={
+            <>
+              <button
+                type="button"
+                onClick={() => setRollbackTarget(null)}
+                disabled={rollingBack}
+                className="rounded-md border border-hairline px-4 py-2 text-sm font-semibold text-body transition hover:bg-canvas disabled:opacity-60"
+              >
+                {strings.common.cancel}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleRollback(rollbackTarget)}
+                disabled={rollingBack}
+                className="flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-bold text-white transition hover:bg-brand-bright disabled:opacity-60"
+              >
+                {rollingBack ? <Spinner size={16} className="border-white" /> : null}
+                {strings.config.rollback}
+              </button>
+            </>
+          }
+        >
+          <p className="text-sm text-body">
+            {strings.config.rollbackBody(rollbackTarget.versionNumber)}
+          </p>
+        </Modal>
+      ) : null}
 
       {addOpen ? (
         <AddParamModal
@@ -425,6 +604,7 @@ function AddParamModal({
             <option value="NUMBER">{strings.config.typeNumber}</option>
             <option value="STRING">{strings.config.typeString}</option>
             <option value="BOOLEAN">{strings.config.typeBoolean}</option>
+            <option value="JSON">{strings.config.typeJson}</option>
           </select>
         </div>
         <div>

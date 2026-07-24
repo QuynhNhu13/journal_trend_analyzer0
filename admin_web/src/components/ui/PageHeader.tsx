@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react';
 
 /**
- * Pink gradient hero header with rounded bottom corners — the web twin of the
- * Flutter app's BrandedHeader (large title + small subtitle on AppGradients.brand).
+ * Page header with clean typography and subtle pink backdrop polish.
  */
 export function PageHeader({
   title,
@@ -14,18 +13,15 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <header className="rounded-b-xl bg-brand px-5 py-6 text-white shadow-brand sm:px-8 sm:py-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight sm:text-[26px]">
-            {title}
-          </h1>
-          {subtitle ? (
-            <p className="mt-1 text-sm text-white/90">{subtitle}</p>
-          ) : null}
+    <header className="border-b border-pink-100/60 bg-gradient-to-r from-white via-pink-50/20 to-white shadow-xs">
+      <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:py-6">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-black text-ink tracking-tight">{title}</h1>
+          {subtitle ? <p className="mt-1 text-xs sm:text-sm font-medium text-muted">{subtitle}</p> : null}
         </div>
-        {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+        {actions ? <div className="flex items-center gap-2.5">{actions}</div> : null}
       </div>
     </header>
   );
 }
+

@@ -63,12 +63,17 @@ export interface AuthUserView {
   displayName: string | null;
   photoUrl: string | null;
   disabled: boolean;
+  emailVerified: boolean;
+  providers: string[];
   isAdmin: boolean;
   hasProfile: boolean;
   creationTime: string | null;
   lastSignInTime: string | null;
+  lastActiveAt: string | null;
   searchCount: number;
   exportCount: number;
+  hasFcmToken: boolean;
+  fcmTokenUpdatedAt: string | null;
 }
 
 /** Summary returned by deleteUser. */
@@ -80,13 +85,20 @@ export interface DeleteUserResult {
   filesDeleted: number;
 }
 
-/** Where a push notification is sent. */
+/** Where a push notification is sent. Topic "all" fans out to every token. */
 export type NotificationTarget =
-  | { type: 'all' }
+  | { type: 'topic'; topic: string }
   | { type: 'uids'; uids: string[] }
   | { type: 'token'; token: string };
 
 export type NotificationTargetType = NotificationTarget['type'];
+
+/** One failed token with its FCM error code. */
+export interface FcmFailure {
+  tokenSuffix: string;
+  code: string;
+  message: string;
+}
 
 /** Result of a send. */
 export interface SendResult {
@@ -94,6 +106,16 @@ export interface SendResult {
   recipients: number;
   successCount: number;
   failureCount: number;
+  failures: FcmFailure[];
+}
+
+/** Result of the testFcmSend diagnostic. */
+export interface TestFcmResult {
+  ok: boolean;
+  messageId: string | null;
+  name: string | null;
+  code: string | null;
+  message: string | null;
 }
 
 /** A row in the `notifications` history collection. */
@@ -101,11 +123,13 @@ export interface NotificationRecord {
   id: string;
   title: string;
   body: string;
+  imageUrl: string | null;
   targetType: NotificationTargetType;
   targetLabel: string;
   recipients: number;
   successCount: number;
   failureCount: number;
+  failures: FcmFailure[];
   data: Record<string, string>;
   sentByEmail: string | null;
   createdAt: Date | null;
@@ -125,6 +149,8 @@ export interface RcParam {
   valueType: RcValueType;
   value: string | null;
   description: string;
+  /** Parameter group this belongs to, or null for a top-level param. */
+  group: string | null;
 }
 
 /** The Remote Config template view returned by the functions. */
@@ -137,6 +163,27 @@ export interface RcTemplateView {
 export type RcChange =
   | { op: 'set'; name: string; valueType: RcValueType; value: string; description?: string }
   | { op: 'delete'; name: string };
+
+/** A Remote Config template version (History tab). */
+export interface RcVersion {
+  versionNumber: string;
+  updateTime: string | null;
+  updateUserEmail: string | null;
+  updateType: string | null;
+  description: string | null;
+}
+
+/** A JSON-safe document field for the Firestore data browser. */
+export type DbFieldType = 'string' | 'number' | 'boolean' | 'null' | 'timestamp' | 'json';
+export interface DbField {
+  key: string;
+  type: DbFieldType;
+  value: string;
+}
+export interface DbDoc {
+  id: string;
+  fields: DbField[];
+}
 
 /** A row in the `admin_logs` audit collection. */
 export interface AdminLog {

@@ -8,7 +8,8 @@ import { DashboardPage } from './pages/DashboardPage';
 import { UsersPage } from './pages/UsersPage';
 import { NotificationsPage } from './pages/NotificationsPage';
 import { ConfigPage } from './pages/ConfigPage';
-import { ReportsPage } from './pages/ReportsPage';
+import { DatabasePage } from './pages/DatabasePage';
+import { StoragePage } from './pages/StoragePage';
 import { LogsPage } from './pages/LogsPage';
 
 export default function App() {
@@ -30,7 +31,8 @@ export default function App() {
         <Route path="users" element={<UsersPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="config" element={<ConfigPage />} />
-        <Route path="reports" element={<ReportsPage />} />
+        <Route path="database" element={<DatabasePage />} />
+        <Route path="storage" element={<StoragePage />} />
         <Route path="logs" element={<LogsPage />} />
       </Route>
 

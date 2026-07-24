@@ -4,6 +4,7 @@ import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { assertAdmin, loadAdminEmails } from './lib/assertAdmin';
 import { adminAuth, bucket, db, REGION } from './lib/firebase';
 import { writeAdminLog } from './lib/logs';
+import { wrap } from './lib/wrap';
 
 interface AuthUserView {
   uid: string;
@@ -11,60 +12,199 @@ interface AuthUserView {
   displayName: string | null;
   photoUrl: string | null;
   disabled: boolean;
+  emailVerified: boolean;
+  /** Sign-in providers, e.g. ["google.com"]. */
+  providers: string[];
   isAdmin: boolean;
   /** True when the account exists in Auth but has no `users/{uid}` profile. */
   hasProfile: boolean;
   creationTime: string | null;
   lastSignInTime: string | null;
+  lastActiveAt: string | null;
   searchCount: number;
   exportCount: number;
+  /** Whether an FCM token is stored (never expose the token itself). */
+  hasFcmToken: boolean;
+  fcmTokenUpdatedAt: string | null;
 }
 
-/** Safety cap — plenty for this project; pagination token is returned if hit. */
+/** Page size for one listUsers call. */
 const LIST_PAGE = 1000;
 
 function numberField(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }
 
+/** Firestore Timestamp → ISO string (or null). */
+function tsToIso(value: unknown): string | null {
+  if (
+    value &&
+    typeof value === 'object' &&
+    typeof (value as { toDate?: unknown }).toDate === 'function'
+  ) {
+    try {
+      return (value as { toDate(): Date }).toDate().toISOString();
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 /**
  * Lists Firebase Auth users and reconciles them with their Firestore profile,
  * flagging accounts that exist in Auth but are missing a `users/{uid}` document.
  */
-export const listAuthUsers = onCall({ region: REGION }, async (request) => {
-  await assertAdmin(request);
+export const listAuthUsers = onCall<{ pageToken?: string }>(
+  { region: REGION },
+  async (request) => {
+    await assertAdmin(request);
 
-  const [listResult, adminEmails] = await Promise.all([
-    adminAuth.listUsers(LIST_PAGE),
-    loadAdminEmails(),
-  ]);
+    const pageToken = request.data?.pageToken || undefined;
+    const [listResult, adminEmails] = await Promise.all([
+      wrap('listUsers (Auth)', () => adminAuth.listUsers(LIST_PAGE, pageToken)),
+      loadAdminEmails(),
+    ]);
 
-  const records: UserRecord[] = listResult.users;
-  const profileSnaps = records.length
-    ? await db.getAll(...records.map((u) => db.collection('users').doc(u.uid)))
-    : [];
-  const profileByUid = new Map(profileSnaps.map((snap) => [snap.id, snap]));
+    const records: UserRecord[] = listResult.users;
+    const profileSnaps = records.length
+      ? await db.getAll(...records.map((u) => db.collection('users').doc(u.uid)))
+      : [];
+    const profileByUid = new Map(profileSnaps.map((snap) => [snap.id, snap]));
 
-  const users: AuthUserView[] = records.map((u) => {
-    const profile = profileByUid.get(u.uid);
-    const hasProfile = profile?.exists ?? false;
-    return {
-      uid: u.uid,
-      email: u.email ?? null,
-      displayName: u.displayName ?? null,
-      photoUrl: u.photoURL ?? null,
-      disabled: u.disabled,
-      isAdmin: u.email ? adminEmails.has(u.email) : false,
-      hasProfile,
-      creationTime: u.metadata.creationTime ?? null,
-      lastSignInTime: u.metadata.lastSignInTime ?? null,
-      searchCount: numberField(profile?.get('searchCount')),
-      exportCount: numberField(profile?.get('exportCount')),
-    };
-  });
+    const users: AuthUserView[] = records.map((u) => {
+      const profile = profileByUid.get(u.uid);
+      const hasProfile = profile?.exists ?? false;
+      const fcmToken = profile?.get('fcmToken');
+      return {
+        uid: u.uid,
+        email: u.email ?? null,
+        displayName: u.displayName ?? null,
+        photoUrl: u.photoURL ?? null,
+        disabled: u.disabled,
+        emailVerified: u.emailVerified,
+        providers: u.providerData.map((p) => p.providerId),
+        isAdmin: u.email ? adminEmails.has(u.email) : false,
+        hasProfile,
+        creationTime: u.metadata.creationTime ?? null,
+        lastSignInTime: u.metadata.lastSignInTime ?? null,
+        lastActiveAt: tsToIso(profile?.get('lastActiveAt')),
+        searchCount: numberField(profile?.get('searchCount')),
+        exportCount: numberField(profile?.get('exportCount')),
+        hasFcmToken: typeof fcmToken === 'string' && fcmToken.length > 0,
+        fcmTokenUpdatedAt: tsToIso(profile?.get('fcmTokenUpdatedAt')),
+      };
+    });
 
-  return { users, nextPageToken: listResult.pageToken ?? null };
-});
+    // Operational diagnostic (visible in `firebase functions:log`): distinguishes
+    // "Auth returned 0 accounts" from "client dropped a non-empty result".
+    console.log(`[listAuthUsers] authCount=${records.length} returned=${users.length}`);
+
+    return { users, nextPageToken: listResult.pageToken ?? null };
+  },
+);
+
+interface CreateUserData {
+  email: string;
+  password: string;
+  displayName?: string;
+}
+
+/** Creates a new Auth account with a temporary password. */
+export const createUser = onCall<CreateUserData>(
+  { region: REGION },
+  async (request) => {
+    const admin = await assertAdmin(request);
+    const { email, password, displayName } = request.data;
+    if (!email?.trim() || !password || password.length < 6) {
+      throw new HttpsError(
+        'invalid-argument',
+        'A valid email and a password of at least 6 characters are required.',
+      );
+    }
+
+    let created;
+    try {
+      created = await adminAuth.createUser({
+        email: email.trim(),
+        password,
+        displayName: displayName?.trim() || undefined,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Create failed.';
+      throw new HttpsError('already-exists', message);
+    }
+
+    await writeAdminLog({
+      actorEmail: admin.email,
+      action: 'createUser',
+      targetId: created.uid,
+      params: { email: email.trim() },
+    });
+    return { uid: created.uid };
+  },
+);
+
+interface UpdateUserData {
+  uid: string;
+  displayName?: string;
+  photoURL?: string;
+}
+
+/** Updates a user's display name and/or photo URL. */
+export const updateUser = onCall<UpdateUserData>(
+  { region: REGION },
+  async (request) => {
+    const admin = await assertAdmin(request);
+    const { uid, displayName, photoURL } = request.data;
+    if (!uid) throw new HttpsError('invalid-argument', 'A user id is required.');
+
+    await wrap('updateUser', () =>
+      adminAuth.updateUser(uid, {
+        displayName: displayName?.trim() || undefined,
+        photoURL: photoURL?.trim() || undefined,
+      }),
+    );
+
+    await writeAdminLog({
+      actorEmail: admin.email,
+      action: 'updateUser',
+      targetId: uid,
+      params: { displayName: displayName ?? null, photoURL: photoURL ?? null },
+    });
+    return { uid };
+  },
+);
+
+interface PasswordResetData {
+  email: string;
+}
+
+/**
+ * Validates that a user exists and records the request; the actual reset email
+ * is dispatched from the web via Firebase's built-in `sendPasswordResetEmail`.
+ */
+export const sendPasswordReset = onCall<PasswordResetData>(
+  { region: REGION },
+  async (request) => {
+    const admin = await assertAdmin(request);
+    const { email } = request.data;
+    if (!email?.trim()) throw new HttpsError('invalid-argument', 'An email is required.');
+
+    try {
+      await adminAuth.getUserByEmail(email.trim());
+    } catch {
+      throw new HttpsError('not-found', 'No user with that email.');
+    }
+
+    await writeAdminLog({
+      actorEmail: admin.email,
+      action: 'sendPasswordReset',
+      targetId: email.trim(),
+    });
+    return { ok: true };
+  },
+);
 
 interface SetDisabledData {
   uid: string;
@@ -89,7 +229,7 @@ export const setUserDisabled = onCall<SetDisabledData>(
       params: { disabled },
     });
 
-    await adminAuth.updateUser(uid, { disabled });
+    await wrap('setUserDisabled', () => adminAuth.updateUser(uid, { disabled }));
     return { uid, disabled };
   },
 );

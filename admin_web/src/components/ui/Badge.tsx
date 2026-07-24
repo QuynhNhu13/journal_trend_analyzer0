@@ -1,17 +1,20 @@
 import type { ReactNode } from 'react';
 
-type Tone = 'brand' | 'neutral' | 'emerald';
+type Tone = 'brand' | 'neutral' | 'success' | 'warning' | 'danger';
 
+// Soft tinted background + bold text + rounded pill styling.
 const TONES: Record<Tone, string> = {
-  brand: 'bg-brand-soft text-brand',
-  neutral: 'bg-canvas text-muted',
-  emerald: 'bg-emerald/10 text-emerald',
+  brand: 'bg-brand-soft/90 text-brand ring-1 ring-inset ring-brand/20',
+  neutral: 'bg-subtle text-muted ring-1 ring-inset ring-hairline',
+  success: 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200/60',
+  warning: 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200/60',
+  danger: 'bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200/60',
 };
 
-/** Small rounded pill for counts, topics, and status tags. */
+/** Small status pill. */
 export function Badge({
   children,
-  tone = 'brand',
+  tone = 'neutral',
 }: {
   children: ReactNode;
   tone?: Tone;
@@ -24,3 +27,4 @@ export function Badge({
     </span>
   );
 }
+

@@ -13,6 +13,8 @@ import '../providers/dashboard_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/widget_keys.dart';
 import '../viewmodels/auth_view_model.dart';
+import '../viewmodels/journals_view_model.dart';
+import '../viewmodels/keywords_view_model.dart';
 import '../viewmodels/profile_view_model.dart';
 import '../widgets/common.dart';
 
@@ -398,6 +400,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  /// Handler for the Remote Config "Refresh" button. Wrapped in a try/catch so
+  /// ANY failure surfaces as a SnackBar (with the real error text) instead of an
+  /// unhandled gesture exception that shows nothing.
+  Future<void> _onRefreshRemoteConfig() async {
+    // Capture everything that needs `context` BEFORE the await — using context
+    // across the async gap is what threw before and swallowed the error.
+    // Use `read` (listen: false) for the strings: `context.s` listens to
+    // LocaleProvider, and listening inside an event handler is an error
+    // ("Provider.of without passing listen: false").
+    final messenger = ScaffoldMessenger.of(context);
+    final s = context.read<LocaleProvider>().strings;
+    final journalsVm = context.read<JournalsViewModel>();
+    final keywordsVm = context.read<KeywordsViewModel>();
+    try {
+      final result = await RemoteConfigService.instance.refresh();
+      if (!mounted) return;
+      setState(() {}); // các dòng giá trị đọc lại rc.maxJournals/…
+      // Re-slice the Journals & Keywords tabs to the new limits so they reflect
+      // the change without a re-search or app restart.
+      journalsVm.reapplyLimit();
+      keywordsVm.reapplyLimit();
+      final msg = switch (result) {
+        RemoteConfigRefreshResult.activated => s.remoteConfigUpdated,
+        RemoteConfigRefreshResult.noChange => s.remoteConfigNoChange,
+        RemoteConfigRefreshResult.throttled => s.remoteConfigThrottled,
+        RemoteConfigRefreshResult.failed => s.remoteConfigFetchFailed,
+      };
+      messenger.showSnackBar(
+        SnackBar(content: Text(msg), duration: const Duration(seconds: 2)),
+      );
+    } catch (e, st) {
+      // Never let the tap handler crash — show the real cause so it can be fixed.
+      debugPrint('❌ Remote Config refresh handler crashed: $e\n$st');
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Refresh error: $e'),
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    }
+  }
+
   // ── Remote Config ──
   Widget _remoteConfig() {
     final rc = RemoteConfigService.instance;
@@ -414,22 +459,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               TextButton.icon(
                 key: const ValueKey(WidgetKeys.remoteConfigRefresh),
-                onPressed: () async {
-                  final messenger = ScaffoldMessenger.of(context);
-                  final s = context.s;
-                  final result = await rc.refresh();
-                  if (!mounted) return;
-                  setState(() {}); // các dòng giá trị đọc lại rc.maxJournals/…
-                  final msg = switch (result) {
-                    RemoteConfigRefreshResult.activated => s.remoteConfigUpdated,
-                    RemoteConfigRefreshResult.noChange => s.remoteConfigNoChange,
-                    RemoteConfigRefreshResult.failed => s.remoteConfigFetchFailed,
-                  };
-                  messenger.showSnackBar(SnackBar(
-                    content: Text(msg),
-                    duration: const Duration(seconds: 2),
-                  ));
-                },
+                onPressed: _onRefreshRemoteConfig,
                 icon: const Icon(Icons.refresh_rounded, size: 16),
                 label: Text(context.s.refresh),
               ),

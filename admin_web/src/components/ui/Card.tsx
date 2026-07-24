@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react';
 
 /**
- * White rounded card with a hairline border and soft shadow — the web twin of
- * the Flutter app's SectionCard (AppDecorations.card).
+ * Surface card: white, subtle pink hairline border, soft modern shadow, rounded-2xl radius.
  */
 export function Card({
   children,
@@ -12,10 +11,9 @@ export function Card({
   className?: string;
 }) {
   return (
-    <div
-      className={`rounded-lg border border-hairline bg-card p-5 shadow-soft sm:p-6 ${className}`}
-    >
+    <div className={`rounded-2xl border border-pink-100/80 bg-white p-5 shadow-soft transition-all duration-200 hover:shadow-card sm:p-6 ${className}`}>
       {children}
     </div>
   );
 }
+

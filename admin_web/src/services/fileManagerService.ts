@@ -12,7 +12,12 @@ import {
 
 import { db, storage } from '../lib/firebase';
 
-/** Root the File Manager is confined to (matches Storage rules). */
+/**
+ * Base folder for the Storage manager. The app's exported PDFs live in
+ * `reports/`, and the Storage rules grant list/read there — so we anchor here
+ * (listing the true bucket root is not granted by the recursive-wildcard rule
+ * and would only show a `reports` folder anyway).
+ */
 export const ROOT_PATH = 'reports/';
 
 export const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB

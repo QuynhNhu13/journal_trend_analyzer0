@@ -31,9 +31,11 @@ service firebase.storage {
       allow delete: if isAdmin();
     }
 
-    // Deny all other paths.
+    // Admin Storage manager: an administrator may browse, upload, rename and
+    // delete anywhere in the bucket from the web console. The app itself only
+    // ever touches `reports/` (covered by the more permissive rule above).
     match /{allPaths=**} {
-      allow read, write: if false;
+      allow read, write: if isAdmin();
     }
   }
 }

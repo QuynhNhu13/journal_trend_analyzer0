@@ -7,15 +7,13 @@ import { Icon } from '../components/ui/Icon';
 import { LoadingState } from '../components/ui/StateView';
 
 /**
- * Shown when a signed-in Google account is not present in the `admins`
- * collection. All inner routes are blocked; the only action is signing out.
+ * Shown when a signed-in Google account is not present in the `admins` collection.
  */
 export function AccessDeniedPage() {
   const { status, user, signOut } = useAuth();
   const [busy, setBusy] = useState(false);
 
-  // Wait for AuthContext to resolve before deciding — otherwise the denial UI
-  // flashes before a valid admin is redirected into the dashboard.
+  // Wait for AuthContext to resolve before deciding
   if (status === 'loading') {
     return (
       <div className="grid min-h-screen place-items-center bg-canvas">
@@ -38,21 +36,30 @@ export function AccessDeniedPage() {
   };
 
   return (
-    <div className="grid min-h-screen place-items-center bg-canvas px-6 py-12">
-      <div className="w-full max-w-md rounded-lg border border-hairline bg-card p-8 text-center shadow-soft">
-        <span className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-danger/10 text-danger">
-          <Icon name="shield" className="h-10 w-10" />
-        </span>
+    <div className="relative grid min-h-screen place-items-center overflow-hidden bg-gradient-to-br from-pink-50 via-rose-50/40 to-pink-100/50 px-6 py-12">
+      <div className="w-full max-w-md rounded-3xl border border-pink-100/80 bg-white/95 p-8 text-center shadow-2xl shadow-pink-500/10 backdrop-blur-xl sm:p-10">
+        
+        {/* App logo container with shield icon overlay */}
+        <div className="relative mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-100 to-rose-50 p-1.5 shadow-md shadow-brand/20 ring-4 ring-white">
+          <img
+            src="/logo.png"
+            alt="Journal Trend Analyzer Logo"
+            className="h-full w-full rounded-xl object-cover opacity-80"
+          />
+          <span className="absolute -bottom-2 -right-2 grid h-8 w-8 place-items-center rounded-full bg-danger text-white shadow-md">
+            <Icon name="shield" className="h-4.5 w-4.5" />
+          </span>
+        </div>
 
-        <h1 className="mt-6 text-xl font-extrabold text-ink">
+        <h1 className="mt-4 text-xl font-extrabold text-ink tracking-tight">
           {strings.accessDenied.title}
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-muted">
+        <p className="mt-2 text-xs leading-relaxed text-muted">
           {strings.accessDenied.message}
         </p>
 
         {user?.email ? (
-          <p className="mt-4 inline-block rounded-full bg-canvas px-3 py-1 text-xs font-semibold text-body">
+          <p className="mt-4 inline-block rounded-full bg-pink-50 px-3.5 py-1 text-xs font-bold text-brand ring-1 ring-pink-200/60">
             {user.email}
           </p>
         ) : null}
@@ -61,12 +68,13 @@ export function AccessDeniedPage() {
           type="button"
           onClick={handleSignOut}
           disabled={busy}
-          className="mt-7 flex w-full items-center justify-center gap-2 rounded-md border border-danger/40 px-4 py-3 text-sm font-bold text-danger transition hover:bg-danger/5 disabled:opacity-60"
+          className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl border border-danger/30 bg-white px-4 py-3 text-xs font-extrabold text-danger shadow-xs transition-all hover:bg-danger/5 disabled:opacity-60"
         >
-          <Icon name="logout" className="h-[18px] w-[18px]" />
+          <Icon name="logout" className="h-4 w-4" />
           {busy ? strings.auth.signingOut : strings.accessDenied.signOut}
         </button>
       </div>
     </div>
   );
 }
+
