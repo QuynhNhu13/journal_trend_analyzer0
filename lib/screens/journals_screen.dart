@@ -12,6 +12,7 @@ import '../widgets/collapsible_branded_header.dart';
 import '../widgets/common.dart';
 import '../widgets/current_topic_chip.dart';
 import '../widgets/topic_search_bar.dart';
+import 'all_journals_screen.dart';
 import 'journal_detail_screen.dart';
 
 /// Journals tab (lab §4.4): journal-level analysis for the selected topic.
@@ -152,9 +153,32 @@ class _JournalsScreenState extends State<JournalsScreen>
           ),
         ),
         const SizedBox(height: 20),
-        Text(context.s.journalsRanking,
-            style: const TextStyle(
-                fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.ink)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(context.s.journalsRanking,
+                style: const TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.ink)),
+            if (vm.allJournals.length > journals.length)
+              TextButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AllJournalsScreen(
+                      journals: vm.allJournals,
+                      topic: vm.currentTopic,
+                    ),
+                  ),
+                ),
+                style: TextButton.styleFrom(
+                    minimumSize: Size.zero, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+                child: Text(
+                  context.s.viewAll,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary),
+                ),
+              ),
+          ],
+        ),
         const SizedBox(height: 12),
         SectionCard(
           padding: EdgeInsets.zero,
@@ -174,9 +198,9 @@ class _JournalsScreenState extends State<JournalsScreen>
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                             fontWeight: FontWeight.w600, fontSize: 14)),
-                    subtitle: Text(context.s.journalRankSubtitle(
+                    subtitle: Text('${context.s.journalRankSubtitle(
                         j.publicationCount,
-                        j.averageCitations.toStringAsFixed(1))),
+                        j.averageCitations.toStringAsFixed(1))}${j.issn.isNotEmpty ? '\nISSN: ${j.issn}' : ''}'),
                     trailing: const Icon(Icons.chevron_right_rounded,
                         color: AppColors.faint),
                     onTap: () => Navigator.push(

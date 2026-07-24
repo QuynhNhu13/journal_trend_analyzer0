@@ -459,7 +459,13 @@ class _DashboardScreenState extends State<DashboardScreen>
     final yearText = summary.mostActiveYear != null
         ? "${summary.mostActiveYear}"
         : context.s.notAvailable;
-    final journalText = summary.topJournal ?? context.s.notAvailable;
+    final topJournalProvider = context.watch<TopJournalProvider>();
+    final journalText = topJournalProvider.isLoading 
+        ? "..." 
+        : (topJournalProvider.journals.isNotEmpty 
+            ? topJournalProvider.journals.first.key 
+            : context.s.notAvailable);
+            
     final authorText = summary.topAuthor ?? context.s.notAvailable;
 
     return Column(
@@ -491,12 +497,6 @@ class _DashboardScreenState extends State<DashboardScreen>
         const SizedBox(height: 12),
         _wideKpiCard(context.s.kpiTopJournal, journalText,
             Icons.menu_book_rounded, AppColors.indigo),
-        const SizedBox(height: 8),
-        Text(
-          context.s.avgCitationsFootnote,
-          style: const TextStyle(
-              fontSize: 11, color: AppColors.faint, fontStyle: FontStyle.italic),
-        ),
       ],
     );
   }

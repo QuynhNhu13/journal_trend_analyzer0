@@ -24,6 +24,9 @@ class JournalsViewModel extends ChangeNotifier {
   List<JournalStat> get journals =>
       _all.take(RemoteConfigService.instance.maxJournals).toList();
 
+  /// All journals without limit
+  List<JournalStat> get allJournals => _all;
+
   int get maxCount => journals.isEmpty ? 1 : journals.first.publicationCount;
 
   Future<void> search(String keyword) async {
@@ -49,8 +52,10 @@ class JournalsViewModel extends ChangeNotifier {
       final stats = grouped.entries.map((e) {
         final totalCites =
             e.value.fold<int>(0, (sum, p) => sum + p.citationCount);
+        final issn = e.value.firstWhere((p) => p.issn.isNotEmpty, orElse: () => e.value.first).issn;
         return JournalStat(
           name: e.key,
+          issn: issn,
           publicationCount: e.value.length,
           totalCitations: totalCites,
           publications: e.value..sort((a, b) => b.citationCount.compareTo(a.citationCount)),

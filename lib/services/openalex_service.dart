@@ -280,9 +280,6 @@ class OpenAlexService{
         throw Exception('Unexpected OpenAlex response (missing meta.count)');
       }
       final results = _requireList(response.data['results']);
-      if (results.isEmpty) {
-        return (total: total, avg: 0.0, count: 0, mostInfluential: null);
-      }
       int totalCitations = 0;
       for (var r in results) {
         totalCitations += (r['cited_by_count'] as int?) ?? 0;

@@ -4,6 +4,7 @@ class Publication {
   final int citationCount;
   final String doi;
   final String journal;
+  final String issn;
   final List<String> authors;
   final String abstractText;
   
@@ -29,6 +30,7 @@ class Publication {
     required this.citationCount,
     required this.doi,
     required this.journal,
+    this.issn = "",
     required this.authors,
     required this.abstractText,
     this.type = "",
@@ -123,6 +125,7 @@ class Publication {
       citationCount: json['cited_by_count'] ?? 0,
       doi: json['doi'] ?? "",
       journal: json['primary_location']?['source']?['display_name'] ?? "",
+      issn: json['primary_location']?['source']?['issn_l']?.toString() ?? "",
       authors: parsedAuthors,
       abstractText: reconstructedAbstract,
       type: json['type'] ?? "",
