@@ -35,7 +35,7 @@ class _JournalDetailScreenState extends State<JournalDetailScreen> {
           BrandedHeader(
             key: const ValueKey(WidgetKeys.journalDetailTitle),
             title: j.name,
-            subtitle: context.s.journalDetailSubtitle,
+            subtitle: j.issn.isNotEmpty ? 'ISSN: ${j.issn}' : '',
             icon: Icons.menu_book_rounded,
           ),
           Expanded(

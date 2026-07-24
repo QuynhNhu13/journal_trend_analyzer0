@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>442283477331-e9v1f0c387vpqs7mosdgqml614stcsp5.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.442283477331-e9v1f0c387vpqs7mosdgqml614stcsp5</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>442283477331-s6hq8qqmgiptfod53o7610op02vbledj.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyD2FnChaE0XiwJ9LTP6-tUIn3h4_jyJZhk</string>
+	<key>GCM_SENDER_ID</key>
+	<string>442283477331</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.prm.journalTrendAnalyzer</string>
+	<key>PROJECT_ID</key>
+	<string>journal-trend-analyzer-3f87b</string>
+	<key>STORAGE_BUCKET</key>
+	<string>journal-trend-analyzer-3f87b.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:442283477331:ios:2a165f1354f398ec5639a6</string>
+</dict>
+</plist>

@@ -4,12 +4,14 @@ import 'publication.dart';
 /// (lab §4.4 Journals, §4.5 Journal Details).
 class JournalStat {
   final String name;
+  final String issn;
   final int publicationCount;
   final int totalCitations;
   final List<Publication> publications;
 
   JournalStat({
     required this.name,
+    required this.issn,
     required this.publicationCount,
     required this.totalCitations,
     required this.publications,
