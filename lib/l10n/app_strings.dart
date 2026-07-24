@@ -237,6 +237,7 @@ class AppStrings {
   String citesBadge(String count) => _t('$count cites', '$count trích dẫn');
 
   // ─── Top Journals screen ─────────────────────────────────
+  String get allJournalsTitle => _t('All Journals', 'Tất cả tạp chí');
   String get topJournalsTitle => _t('Top Journals', 'Tạp chí hàng đầu');
   String topJournalsSubtitleForTopic(String topic) => _t(
       'Most active journals for “$topic”',

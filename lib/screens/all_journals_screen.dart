@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/locale_provider.dart';
 import '../models/journal_stat.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
@@ -20,7 +21,7 @@ class AllJournalsScreen extends StatelessWidget {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
-          'All Journals',
+          context.s.allJournalsTitle,
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
@@ -47,7 +48,7 @@ class AllJournalsScreen extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                 subtitle: Text(
-                  '${j.publicationCount} publications • ${j.averageCitations.toStringAsFixed(1)} avg cites${j.issn.isNotEmpty ? '\nISSN: ${j.issn}' : ''}',
+                  '${context.s.journalRankSubtitle(j.publicationCount, j.averageCitations.toStringAsFixed(1))}${j.issn.isNotEmpty ? '\nISSN: ${j.issn}' : ''}',
                 ),
                 trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.faint),
                 onTap: () => Navigator.push(
