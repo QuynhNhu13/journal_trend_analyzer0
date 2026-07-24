@@ -1,0 +1,73 @@
+rules_version = '2';
+
+// Firestore security rules for Journal Trend Analyzer.
+//
+// Three collections are in play:
+//   admins/{email}   - allowlist for the web admin console (doc id == email).
+//   users/{uid}      - one profile+activity document per app user (doc id == uid).
+//   reports/{id}     - one document per exported PDF (auto id).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // True when the signed-in user's email is present in the admins allowlist.
+    // request.auth.token.email is available for Google sign-ins.
+    function isAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.token.email));
+    }
+
+    // ── admins ──────────────────────────────────────────────────────────────
+    // A signed-in user may read ONLY their own admin document (doc id == their
+    // authenticated email) so a client can check whether its own account is an
+    // admin. Listing the collection is denied, and it is never writable from a
+    // client — manage admins from the Firebase Console only.
+    match /admins/{email} {
+      allow get: if request.auth != null && email == request.auth.token.email;
+      allow list: if false;
+      allow write: if false;
+    }
+
+    // ── users ───────────────────────────────────────────────────────────────
+    // A signed-in user may read and write ONLY their own document (uid == their
+    // auth uid). Admins may read every user document for the dashboard, but the
+    // admin console never writes user docs, so admin writes are not granted.
+    match /users/{uid} {
+      allow read: if isAdmin() || (request.auth != null && request.auth.uid == uid);
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ── reports ─────────────────────────────────────────────────────────────
+    // A signed-in user may create a report document for themselves (the uid in
+    // the payload must match their own) and read their own reports. Admins may
+    // read every report and delete any report (used by the Reports page).
+    // Updates are not needed by any client, so they are denied.
+    match /reports/{reportId} {
+      allow read: if isAdmin()
+        || (request.auth != null && resource.data.uid == request.auth.uid);
+      allow create: if request.auth != null
+        && request.resource.data.uid == request.auth.uid;
+      allow delete: if isAdmin();
+      allow update: if false;
+    }
+
+    // ── notifications ───────────────────────────────────────────────────────
+    // Send history for the admin console. Written only by Cloud Functions
+    // (Admin SDK bypasses these rules); admins may read, clients may not write.
+    match /notifications/{notificationId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // ── admin_logs ──────────────────────────────────────────────────────────
+    // Audit trail written only by Cloud Functions. Admins read; no client write.
+    match /admin_logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Deny everything else by default.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

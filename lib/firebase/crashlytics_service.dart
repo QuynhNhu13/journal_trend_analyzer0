@@ -32,4 +32,15 @@ class CrashlyticsService {
   Future<void> log(String message) async {
     await _c?.log(message);
   }
+
+  /// Records a non-fatal error with an optional [reason]. Safe to call on web
+  /// (no-op) — used to report background failures (e.g. Firestore writes) that
+  /// must not surface to the user.
+  Future<void> recordError(
+    Object error,
+    StackTrace stack, {
+    String? reason,
+  }) async {
+    await _c?.recordError(error, stack, reason: reason);
+  }
 }

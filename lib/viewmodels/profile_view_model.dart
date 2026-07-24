@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
 import '../firebase/analytics_service.dart';
 import '../firebase/storage_service.dart';
+import '../firebase/user_data_service.dart';
 import '../models/dashboard_summary.dart';
 import '../models/exported_report.dart';
 import '../services/report_history_storage_service.dart';
@@ -80,6 +82,13 @@ class ProfileViewModel extends ChangeNotifier {
         ),
       );
       await AnalyticsService.instance.logExportPdf(topic);
+      // Best-effort: record the export + a `reports` document for the web admin
+      // (fire-and-forget so a Firestore failure can't fail the export).
+      unawaited(UserDataService.instance.recordExport(
+        topic: topic,
+        fileName: fileName,
+        downloadUrl: url,
+      ));
     } catch (e) {
       exportError = e.toString();
     } finally {

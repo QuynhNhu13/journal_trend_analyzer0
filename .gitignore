@@ -48,3 +48,12 @@ app.*.map.json
 patrol_test/test_bundle.dart
 integration_test/test_bundle.dart
 integration_test/patrol_test_bundle.dart
+
+# Admin web (React/Vite) — build artifacts, deps and local secrets.
+# .env.example stays committed as a template.
+admin_web/node_modules/
+admin_web/dist/
+admin_web/.env
+
+# Firebase CLI local cache
+.firebase/
